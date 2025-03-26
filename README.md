@@ -9,7 +9,7 @@ fraction of model performance.
 
 For a more in-depth introduction from a classical data compression perspective,
 consider our [paper on nonlinear transform
-coding](https://arxiv.org/abs/2007.03034), or watch @jonarchist's [talk on
+coding](https://arxiv.org/abs/2007.03034), or watch @jonaballe's [talk on
 learned image compression](https://www.youtube.com/watch?v=x_q7cZviXkY). For an
 introduction to lossy data compression from a machine learning perspective, take
 a look at @yiboyang's [review paper](https://arxiv.org/abs/2202.06533).
@@ -55,7 +55,7 @@ If you use this library for research purposes, please cite:
 @software{codex_github,
   author = "Ballé, Jona and Hwang, Sung Jin and Agustsson, Eirikur",
   title = "{CoDeX}: Learned Data Compression in {JAX}",
-  url = "http://github.com/google/codex",
+  url = "http://github.com/balle-lab/codex",
   version = "0.0.1",
   year = "2022",
 }
@@ -63,5 +63,3 @@ If you use this library for research purposes, please cite:
 In the above BibTeX entry, names are top contributors sorted by number of
 commits. Please adjust version number and year according to the version that was
 actually used.
-
-Note that this is not an officially supported Google product.
