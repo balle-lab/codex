@@ -20,7 +20,7 @@ def save_state(path, model, epoch, opt_state):
   state = (model, epoch, opt_state)
   fn_state = f"{path}/state.eqx"
   with open(fn_state, "wb") as f:
-    eqx.tree_serialise_leaves(f, state)  # pytype: disable=wrong-arg-types
+    eqx.tree_serialise_leaves(f, state)
 
 
 def load_state(path, model, opt_state=None):
@@ -30,7 +30,7 @@ def load_state(path, model, opt_state=None):
     state = (model, 0, opt_state)
   fn_state = f"{path}/state.eqx"
   with open(fn_state, "rb") as f:
-    return eqx.tree_deserialise_leaves(f, state)  # pytype: disable=wrong-arg-types
+    return eqx.tree_deserialise_leaves(f, state)
 
 
 def instantiate_model(rng, config):

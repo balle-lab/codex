@@ -35,4 +35,4 @@ def verysoftplus(x: ArrayLike) -> Array:
     the function value of `x`, evaluated elementwise.
   """
   x_neg = jnp.minimum(x, 0)
-  return jnp.where(x > 0, x + 1, 1 / (1 - x_neg))
+  return jnp.where(x > 0, x + 1, 1 / (1 - x_neg))  # type:ignore

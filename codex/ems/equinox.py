@@ -14,31 +14,23 @@
 # ==============================================================================
 """Entropy models as Equinox modules."""
 
-from typing import List, Tuple
-from codex.ems import deep_factorized as _deep_factorized
-from codex.ems import fourier as _fourier
 import equinox as _eqx
 import jax as _jax
-
-# pylint:disable=unused-import,g-importing-member,g-bad-import-order
-from codex.ems.continuous import ContinuousEntropyModel
-from codex.ems.distribution import DistributionEntropyModel
-from codex.ems.distribution import scale_param
-# pylint:enable=unused-import,g-importing-member,g-bad-import-order
-
-Array = _jax.Array
+from codex.ems import deep_factorized as _deep_factorized
+from codex.ems import fourier as _fourier
+from codex.ems import *  # pylint:disable=wildcard-import,unused-wildcard-import
 
 
 class MonotonicMLP(_deep_factorized.MonotonicMLPBase, _eqx.Module):
   """MLP that implements monotonically increasing functions by construction."""
-  matrices: List[Array]
-  biases: List[Array]
-  factors: List[Array]
+  matrices: list[_jax.Array]
+  biases: list[_jax.Array]
+  factors: list[_jax.Array]
 
   def __init__(self,
                rng,
                num_mlps: int,
-               num_units: Tuple[int, ...],
+               num_units: tuple[int, ...],
                init_scale: float):
     """Initializes the MLP.
 
@@ -53,6 +45,7 @@ class MonotonicMLP(_deep_factorized.MonotonicMLPBase, _eqx.Module):
         initially lie within a region of high likelihood. This improves
         training.
     """
+    super().__init__()
     scale = init_scale ** (1 / (1 + len(num_units)))
     num_units = (1,) + num_units + (1,)
     self.matrices = []
@@ -91,12 +84,12 @@ class DeepFactorizedEntropyModel(
 
   where each function CDF_i is modeled by MLPs of different parameters.
   """
-  cdf_logits: _eqx.Module
+  cdf_logits: MonotonicMLP
 
   def __init__(self,
                rng,
                num_pdfs: int,
-               num_units: Tuple[int, ...] = (3, 3, 3),
+               num_units: tuple[int, ...] = (3, 3, 3),
                init_scale: float = 10.):
     """Initializes the model.
 
@@ -114,7 +107,8 @@ class DeepFactorizedEntropyModel(
         initially lie within a region of high likelihood. This improves
         training.
     """
-    self.cdf_logits = MonotonicMLP(rng, num_pdfs, num_units, init_scale)
+    super().__init__()
+    self.cdf_logits = MonotonicMLP(rng, num_pdfs, num_units, init_scale)  # type:ignore
 
 
 class PeriodicFourierEntropyModel(_fourier.PeriodicFourierEntropyModelBase,

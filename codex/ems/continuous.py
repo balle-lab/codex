@@ -14,13 +14,13 @@
 # ==============================================================================
 """Base class for entropy models of continuous distributions."""
 
-from typing import Any, ClassVar, Optional, Tuple
+from typing import ClassVar
 import jax
 import jax.numpy as jnp
 
 Array = jax.Array
 ArrayLike = jax.typing.ArrayLike
-DType = Any  # TODO(jonarchist): Add DType annotation once it exists.
+DTypeLike = jax.typing.DTypeLike
 
 # TODO(jonarchist): Think through shape contracts and broadcasting for all methods
 # of this interface.
@@ -40,7 +40,7 @@ class ContinuousEntropyModel:
     min_dtype: Minimum data type for probability computations. Inputs will be
       type promoted against this to ensure numerical accuracy.
   """
-  min_dtype: ClassVar[DType] = jnp.float32
+  min_dtype: ClassVar[DTypeLike] = jnp.float32
 
   def _maybe_upcast(self, pytree):
     dtype = jax.dtypes.result_type(
@@ -51,7 +51,7 @@ class ContinuousEntropyModel:
 
   def bin_prob(self,
                center: ArrayLike,
-               temperature: Optional[ArrayLike] = None) -> Array:
+               temperature: ArrayLike = None) -> Array:
     """Computes probability mass of bins, see `bin_bits` for explanation."""
     # Default implementation may work in most cases, but may be overridden for
     # performance/stability reasons.
@@ -59,7 +59,7 @@ class ContinuousEntropyModel:
 
   def bin_bits(self,
                center: ArrayLike,
-               temperature: Optional[ArrayLike] = None) -> Array:
+               temperature: ArrayLike = None) -> Array:
     """Computes information content of unit-width quantization bins in bits.
 
     Args:
@@ -119,7 +119,7 @@ class ContinuousEntropyModel:
     """
     raise NotImplementedError()
 
-  def tail_locations(self, tail_mass) -> Tuple[Array, Array]:
+  def tail_locations(self, tail_mass) -> tuple[Array, Array]:
     """Determines approximate tail quantiles.
 
     Args:

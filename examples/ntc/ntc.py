@@ -23,13 +23,13 @@ E. Agustsson, L. Theis:
 https://proceedings.neurips.cc/paper/2020/hash/92049debbe566ca5782a3045cf300a3c-Abstract.html
 """
 
+from typing import override
 import codex
 from codex.ems import equinox as ems
 import distrax
 import equinox as eqx
 import jax
 from jax import numpy as jnp
-
 
 Array = jax.Array
 
@@ -181,14 +181,15 @@ class ConditionalLogisticEntropyModel(ems.DistributionEntropyModel, eqx.Module):
   scale_param: Array
 
   @property
+  @override
   def distribution(self):
     return distrax.Logistic(loc=0, scale=ems.scale_param(self.scale_param, 20))
 
 
 class FactorizedPriorModel(eqx.Module):
   """Nonlinear transform coder with factorized entropy model."""
-  analysis: eqx.Module
-  synthesis: eqx.Module
+  analysis: eqx.nn.Sequential
+  synthesis: eqx.nn.Sequential
   em_y: ems.ContinuousEntropyModel
 
   def __init__(self, rng, x_channels, y_channels, em_y="fourier"):
@@ -232,10 +233,10 @@ class FactorizedPriorModel(eqx.Module):
 
 class HyperPriorModel(eqx.Module):
   """Nonlinear transform coder with hyperprior entropy model."""
-  analysis: eqx.Module
-  synthesis: eqx.Module
-  hyper_analysis: eqx.Module
-  hyper_synthesis: eqx.Module
+  analysis: eqx.nn.Sequential
+  synthesis: eqx.nn.Sequential
+  hyper_analysis: eqx.nn.Sequential
+  hyper_synthesis: eqx.nn.Sequential
   em_z: ems.ContinuousEntropyModel
 
   def __init__(self, rng, x_channels, y_channels, z_channels, em_z="fourier"):

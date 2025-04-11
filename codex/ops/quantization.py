@@ -15,7 +15,6 @@
 """Quantization operations."""
 
 import functools
-from typing import Optional
 import jax
 from jax import numpy as jnp
 
@@ -23,7 +22,7 @@ Array = jax.Array
 ArrayLike = jax.typing.ArrayLike
 
 
-def soft_round(x: ArrayLike, temperature: Optional[ArrayLike]) -> Array:
+def soft_round(x: ArrayLike, temperature: ArrayLike | None) -> Array:
   """Differentiable approximation to `jnp.round`.
 
   Lower temperatures correspond to closer approximations of the round function.
@@ -56,17 +55,17 @@ def soft_round(x: ArrayLike, temperature: Optional[ArrayLike]) -> Array:
     return m + r
 
   return jnp.where(
-      temperature < 1e-4,
+      temperature < 1e-4,  # type:ignore
       jnp.round(x),
       jnp.where(
-          temperature > 1e4,
+          temperature > 1e4,  # type:ignore
           x,
           _soft_round(x, jnp.clip(temperature, 1e-4, 1e4)),
       ),
   )
 
 
-def soft_round_inverse(x: ArrayLike, temperature: Optional[ArrayLike]) -> Array:
+def soft_round_inverse(x: ArrayLike, temperature: ArrayLike | None) -> Array:
   """Inverse of `soft_round`.
 
   This function is described in Sec. 4.1 of the paper
@@ -96,10 +95,10 @@ def soft_round_inverse(x: ArrayLike, temperature: Optional[ArrayLike]) -> Array:
     return m + r
 
   return jnp.where(
-      temperature < 1e-4,
+      temperature < 1e-4,  # type:ignore
       jnp.ceil(x) - .5,
       jnp.where(
-          temperature > 1e4,
+          temperature > 1e4,  # type:ignore
           x,
           _sr_inverse(x, jnp.clip(temperature, 1e-4, 1e4)),
       ),
@@ -107,7 +106,7 @@ def soft_round_inverse(x: ArrayLike, temperature: Optional[ArrayLike]) -> Array:
 
 
 def soft_round_conditional_mean(x: ArrayLike,
-                                temperature: Optional[ArrayLike]) -> Array:
+                                temperature: ArrayLike | None) -> Array:
   """Conditional mean of inputs given noisy soft rounded values.
 
   Computes `g(z) = E[X | Q(X) + U = z]` where `Q` is the soft-rounding function,

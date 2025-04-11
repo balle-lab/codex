@@ -14,12 +14,13 @@
 # ==============================================================================
 """Deep fully factorized entropy model based on cumulative density."""
 
-from typing import Optional, Tuple
-from codex.ems import continuous
-from codex.ops import quantization
+from collections.abc import Callable
+from typing import override
 import jax
 from jax import nn
 import jax.numpy as jnp
+from codex.ems import continuous
+from codex.ops import quantization
 
 Array = jax.Array
 ArrayLike = jax.typing.ArrayLike
@@ -62,17 +63,19 @@ def matrix_init(shape, scale):
   return jnp.full(shape, jnp.log(jnp.expm1(1 / scale / shape[-1])))
 
 
-# pytype:disable=attribute-error
 class MonotonicMLPBase:
   """MLP that implements monotonically increasing functions by construction."""
+  matrices: list[Array]
+  biases: list[Array]
+  factors: list[Array]
 
   def __call__(self, x):
     x = x[..., None]
     assert len(self.matrices) == len(self.biases) == len(self.factors) + 1
-    for k in range(len(self.factors)):
-      x = jnp.einsum("...i,...ji->...j", x, jax.nn.softplus(self.matrices[k]))
-      x += self.biases[k]
-      x += jnp.tanh(x) * jnp.tanh(self.factors[k])
+    for matrix, bias, factor in zip(self.matrices, self.biases, self.factors):
+      x = jnp.einsum("...i,...ji->...j", x, jax.nn.softplus(matrix))
+      x += bias
+      x += jnp.tanh(x) * jnp.tanh(factor)
     x = jnp.einsum("...i,...ji->...j", x, jax.nn.softplus(self.matrices[-1]))
     x += self.biases[-1]
     return jnp.squeeze(x, axis=-1)
@@ -99,21 +102,23 @@ class DeepFactorizedEntropyModelBase(continuous.ContinuousEntropyModel):
 
   where each function CDF_i is modeled by MLPs of different parameters.
   """
+  cdf_logits: Callable
 
   def _upper_lower_logits(
       self,
       center: ArrayLike,
-      temperature: Optional[ArrayLike] = None,
-  ) -> Tuple[Array, ...]:
+      temperature: ArrayLike = None,
+  ) -> tuple[Array, ...]:
     upper = quantization.soft_round_inverse(center + .5, temperature)
     lower = upper - 1.
     logits_upper = self.cdf_logits(upper)
     logits_lower = self.cdf_logits(lower)
     return self._maybe_upcast((logits_upper, logits_lower))
 
+  @override
   def bin_bits(self,
                center: ArrayLike,
-               temperature: Optional[ArrayLike] = None) -> Array:
+               temperature: ArrayLike = None) -> Array:
     logits_upper, logits_lower = self._upper_lower_logits(center, temperature)
     # sigmoid(u) - sigmoid(l) = sigmoid(-l) - sigmoid(-u)
     condition = logits_upper <= -logits_lower
@@ -121,11 +126,11 @@ class DeepFactorizedEntropyModelBase(continuous.ContinuousEntropyModel):
     small = nn.log_sigmoid(jnp.where(condition, logits_lower, -logits_upper))
     return continuous.logsum_expbig_minus_expsmall(big, small) / -jnp.log(2.)
 
+  @override
   def bin_prob(self,
                center: ArrayLike,
-               temperature: Optional[ArrayLike] = None) -> Array:
+               temperature: ArrayLike = None) -> Array:
     logits_upper, logits_lower = self._upper_lower_logits(center, temperature)
     # sigmoid(u) - sigmoid(l) = sigmoid(-l) - sigmoid(-u)
     sgn = -jnp.sign(logits_upper + logits_lower)
     return abs(nn.sigmoid(sgn * logits_upper) - nn.sigmoid(sgn * logits_lower))
-# pytype:enable=attribute-error

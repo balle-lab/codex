@@ -14,24 +14,62 @@
 # ==============================================================================
 """Tests of Flax entropy models."""
 
+from collections.abc import Callable
+from typing import override
 import chex
-from codex.ems import flax as ems
 import distrax
 from flax import linen as nn
 import jax
 import jax.numpy as jnp
+from codex.ems import flax as ems
+
+Array = jax.Array
 
 
-class TestDistributionEntropyModel:
+class EntropyModelTests:
+  get_em: Callable
+  expected_param_shapes: dict
 
-  def get_em(self):
+  def test_shapes_are_correct(self):
+    get_em = self.get_em
+
+    class OuterModel(nn.Module):
+      @nn.compact
+      @override
+      def __call__(self, x):
+        return get_em().bin_bits(x)
+
+    x = jnp.ones((5, 3, 2))
+
+    init_params = OuterModel().init(jax.random.key(0), x)
+    chex.assert_trees_all_equal(
+        jax.tree.map(lambda p: p.shape, init_params),
+        self.expected_param_shapes)
+
+    y = OuterModel().apply(init_params, x)
+    assert y.shape == x.shape
+
+    grads = jax.grad(lambda p: OuterModel().apply(p, x).sum())(init_params)
+    chex.assert_trees_all_equal(
+        jax.tree.map(lambda g: g.shape, grads),
+        self.expected_param_shapes)
+
+
+class TestDistributionEntropyModel(EntropyModelTests):
+
+  @override
+  def get_em(self) -> ems.ContinuousEntropyModel:
     class EntropyModel(ems.DistributionEntropyModel, nn.Module):
 
+      @override
       def setup(self):
+        # pylint:disable=attribute-defined-outside-init
         self.loc = self.param("loc", nn.initializers.normal(), (3, 1))
         self.log_scale = self.param("log_scale", nn.initializers.normal(), (2,))
+        # pylint:enable=attribute-defined-outside-init
 
       @property
+      @override
       def distribution(self):
         return distrax.Normal(loc=self.loc, scale=jnp.exp(self.log_scale))
 
@@ -46,33 +84,10 @@ class TestDistributionEntropyModel:
       )
   )
 
-  def test_shapes_are_correct(self):
-    get_em = self.get_em
 
-    class OuterModel(nn.Module):
+class TestDeepFactorizedEntropyModel(EntropyModelTests):
 
-      @nn.compact
-      def __call__(self, x):
-        return get_em().bin_bits(x)
-
-    x = jnp.ones((5, 3, 2))
-
-    init_params = OuterModel().init(jax.random.PRNGKey(0), x)
-    chex.assert_trees_all_equal(
-        jax.tree.map(lambda p: p.shape, init_params),
-        self.expected_param_shapes)
-
-    y = OuterModel().apply(init_params, x)
-    assert y.shape == x.shape
-
-    grads = jax.grad(lambda p: OuterModel().apply(p, x).sum())(init_params)
-    chex.assert_trees_all_equal(
-        jax.tree.map(lambda g: g.shape, grads),
-        self.expected_param_shapes)
-
-
-class TestDeepFactorizedEntropyModel(TestDistributionEntropyModel):
-
+  @override
   def get_em(self):
     return ems.DeepFactorizedEntropyModel(num_pdfs=2, num_units=(3, 5))
 
@@ -94,8 +109,9 @@ class TestDeepFactorizedEntropyModel(TestDistributionEntropyModel):
   )
 
 
-class TestPeriodicFourierEntropyModel(TestDistributionEntropyModel):
+class TestPeriodicFourierEntropyModel(EntropyModelTests):
 
+  @override
   def get_em(self):
     return ems.PeriodicFourierEntropyModel(period=2., num_pdfs=2, num_freqs=5)
 
@@ -109,8 +125,9 @@ class TestPeriodicFourierEntropyModel(TestDistributionEntropyModel):
   )
 
 
-class TestRealMappedFourierEntropyModel(TestDistributionEntropyModel):
+class TestRealMappedFourierEntropyModel(EntropyModelTests):
 
+  @override
   def get_em(self):
     return ems.RealMappedFourierEntropyModel(num_pdfs=2, num_freqs=5)
 

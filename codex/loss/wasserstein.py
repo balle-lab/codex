@@ -18,12 +18,12 @@ Please refer to https://arxiv.org/abs/2310.03629 for details.
 """
 
 import collections
+from collections.abc import Collection
 import functools
-from typing import Any, Collection, Union
-from codex.ops import gradient
+from typing import Any
 import jax
 from jax import numpy as jnp
-
+from codex.ops import gradient
 
 Array = jax.Array
 
@@ -92,7 +92,7 @@ def wasserstein_distortion(
     num_levels: int = 5,
     sqrt_grad_limit: float = 1e6,
     return_intermediates: bool = False,
-) -> Union[Array, tuple[Array, dict[str, Any]]]:
+) -> Array | tuple[Array, dict[str, Any]]:
   """Evaluates Wasserstein Distortion between two feature arrays.
 
   Args:
@@ -165,7 +165,7 @@ def multi_wasserstein_distortion(
     num_levels: int = 5,
     sqrt_grad_limit: float = 1e6,
     return_intermediates: bool = False,
-) -> Union[Array, tuple[Array, dict[str, Any]]]:
+) -> Array | tuple[Array, dict[str, Any]]:
   """Wasserstein Distortion between multiple feature arrays of two images.
 
   This function accepts more than one feature array per image. The arrays don't

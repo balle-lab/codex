@@ -14,29 +14,32 @@
 # ==============================================================================
 """Tests of Equinox entropy models."""
 
+from typing import override
 import chex
-from codex.ems import equinox as ems
 import distrax
 import equinox as eqx
 import jax
 import jax.numpy as jnp
+from codex.ems import equinox as ems
 
 Array = jax.Array
 
 
 class TestDistributionEntropyModel:
 
-  def get_em(self, rng):
+  def get_em(self, rng) -> ems.ContinuousEntropyModel:
     class EntropyModel(ems.DistributionEntropyModel, eqx.Module):
       loc: Array
       log_scale: Array
 
       def __init__(self, rng):
+        super().__init__()
         rngs = jax.random.split(rng)
         self.loc = jax.random.normal(rngs[0], (3, 1))
         self.log_scale = jax.random.normal(rngs[1], (2,))
 
       @property
+      @override
       def distribution(self):
         return distrax.Normal(loc=self.loc, scale=jnp.exp(self.log_scale))
 
@@ -51,6 +54,7 @@ class TestDistributionEntropyModel:
       em: eqx.Module
 
       def __init__(self, rng):
+        super().__init__()
         self.em = get_em(rng)
 
       def __call__(self, x):
@@ -58,7 +62,7 @@ class TestDistributionEntropyModel:
 
     x = jnp.ones((5, 3, 2))
 
-    model = OuterModel(jax.random.PRNGKey(0))
+    model = OuterModel(jax.random.key(0))
     param_shapes = jax.tree.map(
         lambda p: p.shape,
         jax.tree.flatten(eqx.filter(model, eqx.is_array))[0])
@@ -80,6 +84,7 @@ class TestDistributionEntropyModel:
 
 class TestDeepFactorizedEntropyModel(TestDistributionEntropyModel):
 
+  @override
   def get_em(self, rng):
     return ems.DeepFactorizedEntropyModel(rng, num_pdfs=2, num_units=(3, 5))
 
@@ -92,6 +97,7 @@ class TestDeepFactorizedEntropyModel(TestDistributionEntropyModel):
 
 class TestPeriodicFourierEntropyModel(TestDistributionEntropyModel):
 
+  @override
   def get_em(self, rng):
     return ems.PeriodicFourierEntropyModel(
         rng, period=2., num_pdfs=2, num_freqs=5)
@@ -101,6 +107,7 @@ class TestPeriodicFourierEntropyModel(TestDistributionEntropyModel):
 
 class TestRealMappedFourierEntropyModel(TestDistributionEntropyModel):
 
+  @override
   def get_em(self, rng):
     return ems.RealMappedFourierEntropyModel(rng, num_pdfs=2, num_freqs=5)
 

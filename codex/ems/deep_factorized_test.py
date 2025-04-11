@@ -15,10 +15,10 @@
 """Tests of deep factorized entropy model."""
 
 import chex
-from codex.ems import equinox
 import distrax
 import jax
 import jax.numpy as jnp
+from codex.ems import equinox
 
 # TODO(jonarchist): Improve unit tests, e.g. check that the distribution is
 # normalized, that expected value of `bin_bits` with noise is an upper bound
@@ -29,11 +29,11 @@ def test_logistic_is_special_case():
   # With no hidden units, the density should collapse to a logistic
   # distribution convolved with a standard uniform distribution.
   em = equinox.DeepFactorizedEntropyModel(
-      jax.random.PRNGKey(0), num_pdfs=1, num_units=(), init_scale=1)
+      jax.random.key(0), num_pdfs=1, num_units=(), init_scale=1)
   x = jnp.linspace(-5., 5., 30)[:, None]
   prob_em = em.bin_prob(x)
   logistic = distrax.Logistic(loc=-em.cdf_logits.biases[0][0, 0], scale=1.)
-  prob_log = logistic.cdf(x + .5) - logistic.cdf(x - .5)
+  prob_log = logistic.cdf(x + .5) - logistic.cdf(x - .5)  # type:ignore
   chex.assert_trees_all_close(prob_em, prob_log, atol=1e-7)
 
 
@@ -41,7 +41,7 @@ def test_uniform_is_special_case():
   # With the scale parameter going to zero, the density should approach a
   # unit-width uniform distribution.
   em = equinox.DeepFactorizedEntropyModel(
-      jax.random.PRNGKey(0), num_pdfs=1, init_scale=1e-6)
+      jax.random.key(0), num_pdfs=1, init_scale=1e-6)
   x = jnp.linspace(-1., 1., 10)[:, None]
   prob = em.bin_prob(x)
   chex.assert_trees_all_close(
@@ -51,7 +51,7 @@ def test_uniform_is_special_case():
 
 def test_bin_prob_and_bits_are_consistent():
   em = equinox.DeepFactorizedEntropyModel(
-      jax.random.PRNGKey(0), num_pdfs=1, num_units=(2, 3))
+      jax.random.key(0), num_pdfs=1, num_units=(2, 3))
   x = jnp.linspace(-5., 5., 30)[:, None]
   prob = em.bin_prob(x)
   bits = em.bin_bits(x)

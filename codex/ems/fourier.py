@@ -14,12 +14,12 @@
 # ==============================================================================
 """Fourier basis entropy models."""
 
-from typing import Optional
-from codex.ems import continuous
-from codex.ops import quantization
+from typing import override
 import jax
 from jax import nn
 import jax.numpy as jnp
+from codex.ems import continuous
+from codex.ops import quantization
 
 Array = jax.Array
 ArrayLike = jax.typing.ArrayLike
@@ -50,7 +50,7 @@ def autocorrelate(sequence: Array, precision=None) -> Array:
   )[0]
 
 
-def periodic_prob(coef: Array, x: Array, y: Optional[Array] = None) -> Array:
+def periodic_prob(coef: Array, x: Array, y: Array = None) -> Array:
   """Evaluates PDF or difference of CDFs of a periodic Fourier basis density.
 
   This function assumes the model is periodic with period 2.
@@ -90,11 +90,13 @@ def periodic_prob(coef: Array, x: Array, y: Optional[Array] = None) -> Array:
             ((ac.imag / pi_n) * cos_diff).sum(axis=-1)) / dc + (y - x) / 2
 
 
-# pytype:disable=attribute-error
 class PeriodicFourierEntropyModelBase(continuous.ContinuousEntropyModel):
   """Fourier basis entropy model for periodic distributions."""
+  real: Array
+  imag: Array
+  period: float
 
-  def prob(self, x: ArrayLike) -> Array:
+  def prob(self, x: Array) -> Array:
     # Get and transform model parameters.
     coef = jax.lax.complex(self.real, self.imag)
 
@@ -104,14 +106,15 @@ class PeriodicFourierEntropyModelBase(continuous.ContinuousEntropyModel):
 
     return periodic_prob(coef, g_inv) * dg_inv_dx
 
-  def neg_log_prob(self, x: ArrayLike, eps: float = 1e-20) -> Array:
+  def neg_log_prob(self, x: Array, eps: float = 1e-20) -> Array:
     p = self.prob(x)
     p = jnp.maximum(p, eps)
     return -jnp.log(p)
 
+  @override
   def bin_prob(self,
                center: ArrayLike,
-               temperature: Optional[ArrayLike] = None) -> Array:
+               temperature: ArrayLike = None) -> Array:
     center, temperature = self._maybe_upcast((center, temperature))
 
     # Get and transform model parameters.
@@ -129,9 +132,10 @@ class PeriodicFourierEntropyModelBase(continuous.ContinuousEntropyModel):
 
     return periodic_prob(coef, lower, upper)
 
+  @override
   def bin_bits(self,
                center: ArrayLike,
-               temperature: Optional[ArrayLike] = None,
+               temperature: ArrayLike = None,
                eps: float = 1e-20) -> Array:
     p = self.bin_prob(center, temperature)
     p = jnp.maximum(p, eps)
@@ -140,6 +144,10 @@ class PeriodicFourierEntropyModelBase(continuous.ContinuousEntropyModel):
 
 class RealMappedFourierEntropyModelBase(continuous.ContinuousEntropyModel):
   """Fourier basis entropy model mapped to the real line."""
+  real: Array
+  imag: Array
+  offset: Array
+  scale: Array
 
   def prob(self, x: ArrayLike) -> Array:
     # Get and transform model parameters.
@@ -158,9 +166,10 @@ class RealMappedFourierEntropyModelBase(continuous.ContinuousEntropyModel):
     p = jnp.maximum(p, eps)
     return -jnp.log(p)
 
+  @override
   def bin_prob(self,
                center: ArrayLike,
-               temperature: Optional[ArrayLike] = None) -> Array:
+               temperature: ArrayLike = None) -> Array:
     center, temperature = self._maybe_upcast((center, temperature))
 
     # Get and transform model parameters.
@@ -179,11 +188,11 @@ class RealMappedFourierEntropyModelBase(continuous.ContinuousEntropyModel):
 
     return periodic_prob(coef, lower, upper)
 
+  @override
   def bin_bits(self,
                center: ArrayLike,
-               temperature: Optional[ArrayLike] = None,
+               temperature: ArrayLike = None,
                eps: float = 1e-20) -> Array:
     p = self.bin_prob(center, temperature)
     p = jnp.maximum(p, eps)
     return jnp.log(p) / -jnp.log(2.)
-# pytype:enable=attribute-error

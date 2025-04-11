@@ -15,12 +15,12 @@
 """Tests for quantization operations."""
 
 import chex
-from codex.ops import quantization
 import jax
 from jax import nn
 from jax import random
 import jax.numpy as jnp
 import pytest
+from codex.ops import quantization
 
 # TODO(jonarchist): Improve unit tests.
 
@@ -59,8 +59,9 @@ def test_ste_round_gradient_is_identity():
 
 @pytest.mark.parametrize("t", [1e-1, 1e0, 1e1])
 def test_ste_argmax_gradient_is_computed_correctly(t):
-  softmax = lambda l, t: nn.softmax(l / t, axis=-1)
-  x = random.uniform(random.PRNGKey(0), (3, 4, 5))
+  def softmax(l, t):
+    return nn.softmax(l / t, axis=-1)
+  x = random.uniform(random.key(0), (3, 4, 5))
   primals = (x, t)
   tangents = (jnp.ones_like(x), jnp.zeros_like(t))
   _, grad_sm = jax.jvp(softmax, primals, tangents)

@@ -14,37 +14,30 @@
 # ==============================================================================
 """Tests for distribution entropy model."""
 
+from typing import override
 import dataclasses
 import chex
-from codex.ems import distribution
 import distrax
 import jax
 import jax.numpy as jnp
+from codex.ems import distribution
 
-ArrayLike = jax.typing.ArrayLike
+Numeric = chex.Numeric
 
 # TODO(jonarchist): Improve unit tests.
 
 
-class TestNormalDistribution:
-
-  @dataclasses.dataclass
-  class EntropyModel(distribution.DistributionEntropyModel):
-    loc: ArrayLike
-    scale: ArrayLike
-
-    @property
-    def distribution(self):
-      return distrax.Normal(loc=self.loc, scale=self.scale)
+class DistributionTests:
+  EntropyModel: type
 
   def test_can_instantiate_and_evaluate_scalar(self):
-    x = jax.random.normal(jax.random.PRNGKey(0), (3, 4, 5))
+    x = jax.random.normal(jax.random.key(0), (3, 4, 5))
     em = self.EntropyModel(loc=3.4, scale=1.)
     chex.assert_equal_shape((x, em.bin_prob(x)))
     chex.assert_equal_shape((x, em.bin_bits(x)))
 
   def test_can_instantiate_and_evaluate_array(self):
-    x = jax.random.normal(jax.random.PRNGKey(0), (3, 4, 2))
+    x = jax.random.normal(jax.random.key(0), (3, 4, 2))
     em = self.EntropyModel(loc=jnp.array([3., 2.]), scale=.5)
     chex.assert_equal_shape((x, em.bin_prob(x)))
     chex.assert_equal_shape((x, em.bin_bits(x)))
@@ -106,39 +99,55 @@ class TestNormalDistribution:
     assert jnp.isfinite(dbdp).all(), dbdp
 
 
-class TestZeroMeanDistribution(TestNormalDistribution):
+class TestNormalDistribution(DistributionTests):
 
   @dataclasses.dataclass
   class EntropyModel(distribution.DistributionEntropyModel):
-    loc: ArrayLike
-    scale: ArrayLike
+    loc: Numeric
+    scale: Numeric
+
+    @property
+    @override
+    def distribution(self):
+      return distrax.Normal(loc=self.loc, scale=self.scale)
+
+
+class TestZeroMeanDistribution(DistributionTests):
+
+  @dataclasses.dataclass
+  class EntropyModel(distribution.DistributionEntropyModel):
+    loc: Numeric
+    scale: Numeric
 
     even_symmetric = True
 
     @property
+    @override
     def distribution(self):
       return distrax.Normal(loc=0., scale=self.scale)
 
 
-class TestLogisticDistribution(TestNormalDistribution):
+class TestLogisticDistribution(DistributionTests):
 
   @dataclasses.dataclass
   class EntropyModel(distribution.DistributionEntropyModel):
-    loc: ArrayLike
-    scale: ArrayLike
+    loc: Numeric
+    scale: Numeric
 
     @property
+    @override
     def distribution(self):
       return distrax.Logistic(loc=self.loc, scale=self.scale)
 
 
-class TestLaplaceDistribution(TestNormalDistribution):
+class TestLaplaceDistribution(DistributionTests):
 
   @dataclasses.dataclass
   class EntropyModel(distribution.DistributionEntropyModel):
-    loc: ArrayLike
-    scale: ArrayLike
+    loc: Numeric
+    scale: Numeric
 
     @property
+    @override
     def distribution(self):
       return distrax.Laplace(loc=self.loc, scale=self.scale)

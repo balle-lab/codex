@@ -122,7 +122,7 @@ def perturb_and_apply(f, x, u, *args):
     return jnp.zeros_like(x)
 
   @zeros_with_df_dx.defjvp
-  def zeros_with_df_dx_jvp(primals, tangents):
+  def zeros_with_df_dx_jvp(primals, tangents):  # type: ignore
     x, a = primals
     x_dot, _ = tangents
     f_dot = (new_f(x + .5, *a) - new_f(x - .5, *a)) * x_dot

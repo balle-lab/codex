@@ -14,13 +14,13 @@
 # ==============================================================================
 """Tests for neural network operations."""
 
+import jax
 from codex.ops import activation
-from jax import random
 
 
 def test_verysoftplus():
   shape = (1, 2, 3)
-  x = 100 * random.normal(random.PRNGKey(0), shape)
+  x = 100 * jax.random.normal(jax.random.key(0), shape)
   y = activation.verysoftplus(x)
   assert y.shape == shape
   assert (y > 0).all()

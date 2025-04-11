@@ -14,17 +14,12 @@
 # ==============================================================================
 """Entropy models as Flax modules."""
 
-from typing import Tuple
-from codex.ems import deep_factorized as _deep_factorized
-from codex.ems import fourier as _fourier
+from typing import override
 from flax import linen as _nn
 import jax as _jax
-
-# pylint:disable=unused-import,g-importing-member,g-bad-import-order
-from codex.ems.continuous import ContinuousEntropyModel
-from codex.ems.distribution import DistributionEntropyModel
-from codex.ems.distribution import scale_param
-# pylint:enable=unused-import,g-importing-member,g-bad-import-order
+from codex.ems import deep_factorized as _deep_factorized
+from codex.ems import fourier as _fourier
+from codex.ems import *  # pylint:disable=wildcard-import,unused-wildcard-import
 
 
 class MonotonicMLP(_deep_factorized.MonotonicMLPBase, _nn.Module):
@@ -41,9 +36,10 @@ class MonotonicMLP(_deep_factorized.MonotonicMLPBase, _nn.Module):
       training.
   """
   num_mlps: int
-  num_units: Tuple[int, ...]
+  num_units: tuple[int, ...]
   init_scale: float
 
+  @override
   def setup(self):
     scale = self.init_scale ** (1 / (1 + len(self.num_units)))
     num_units = (1,) + self.num_units + (1,)
@@ -108,9 +104,10 @@ class DeepFactorizedEntropyModel(
       training.
   """
   num_pdfs: int
-  num_units: Tuple[int, ...] = (3, 3, 3)
+  num_units: tuple[int, ...] = (3, 3, 3)
   init_scale: float = 10.
 
+  @override
   def setup(self):
     self.cdf_logits = MonotonicMLP(
         self.num_pdfs, self.num_units, self.init_scale)
@@ -136,9 +133,10 @@ class PeriodicFourierEntropyModel(_fourier.PeriodicFourierEntropyModelBase,
   num_freqs: int = 10
   init_scale: float = 1e-3
 
+  @override
   def setup(self):
-    init_coef = lambda rng: self.init_scale * _jax.random.normal(
-        rng, (self.num_pdfs, self.num_freqs))
+    def init_coef(rng):
+      return self.init_scale * _jax.random.normal(rng, (self.num_pdfs, self.num_freqs))
     self.real = self.param("real", init_coef)
     self.imag = self.param("imag", init_coef)
 
@@ -160,10 +158,10 @@ class RealMappedFourierEntropyModel(_fourier.RealMappedFourierEntropyModelBase,
   num_freqs: int = 10
   init_scale: float = 1e-3
 
+  @override
   def setup(self):
     def init_coef(rng):
-      val = _jax.random.normal(rng, (self.num_pdfs, self.num_freqs))
-      return self.init_scale * val
+      return self.init_scale * _jax.random.normal(rng, (self.num_pdfs, self.num_freqs))
     self.real = self.param("real", init_coef)
     self.imag = self.param("imag", init_coef)
     self.scale = self.param("scale",

@@ -14,12 +14,12 @@
 # ==============================================================================
 """Entropy model wrapping a Distrax/TFP Distribution object."""
 
-from typing import ClassVar, Optional, Tuple
+from typing import ClassVar, override
+import jax
+import jax.numpy as jnp
 from codex.ems import continuous
 from codex.ops import gradient
 from codex.ops import quantization
-import jax
-import jax.numpy as jnp
 
 Array = jax.Array
 ArrayLike = jax.typing.ArrayLike
@@ -27,7 +27,7 @@ ArrayLike = jax.typing.ArrayLike
 
 def bin_prob(distribution,
              center: ArrayLike,
-             temperature: Optional[ArrayLike] = None,
+             temperature: ArrayLike = None,
              even_symmetric: bool = False) -> Array:
   """Functional version of `DistributionEntropyModel.bin_prob`."""
   # Note that soft_round_inverse corresponds to identity for temperature = None.
@@ -47,7 +47,7 @@ def bin_prob(distribution,
 
 def bin_bits(distribution,
              center: ArrayLike,
-             temperature: Optional[ArrayLike] = None,
+             temperature: ArrayLike = None,
              even_symmetric: bool = False) -> Array:
   """Functional version of `DistributionEntropyModel.bin_bits`."""
   # Note that soft_round_inverse corresponds to identity for temperature = None.
@@ -118,7 +118,6 @@ class DistributionEntropyModel(continuous.ContinuousEntropyModel):
       guaranteed to be symmetric around zero (p(x) = p(-x) for any x). This
       simplifies computations in `bin_prob`/`bin_bits`. Defaults to `False`.
   """
-
   even_symmetric: ClassVar[bool] = False
 
   @property
@@ -126,22 +125,26 @@ class DistributionEntropyModel(continuous.ContinuousEntropyModel):
     """Continuous Distrax/TFP `Distribution` representing this entropy model."""
     raise NotImplementedError("Subclass must define distribution.")
 
+  @override
   def bin_prob(self,
                center: ArrayLike,
-               temperature: Optional[ArrayLike] = None) -> Array:
+               temperature: ArrayLike = None) -> Array:
     center, temperature = self._maybe_upcast((center, temperature))
     return bin_prob(self.distribution, center, temperature, self.even_symmetric)
 
+  @override
   def bin_bits(self,
                center: ArrayLike,
-               temperature: Optional[ArrayLike] = None) -> Array:
+               temperature: ArrayLike = None) -> Array:
     center, temperature = self._maybe_upcast((center, temperature))
     return bin_bits(self.distribution, center, temperature, self.even_symmetric)
 
+  @override
   def quantization_offset(self) -> Array:
     return self.distribution.mode()
 
-  def tail_locations(self, tail_mass: ArrayLike) -> Tuple[Array, Array]:
+  @override
+  def tail_locations(self, tail_mass: ArrayLike) -> tuple[Array, Array]:
     tail_mass = self._maybe_upcast(tail_mass)
     return (self.distribution.quantile(tail_mass),
             self.distribution.quantile(1 - tail_mass))

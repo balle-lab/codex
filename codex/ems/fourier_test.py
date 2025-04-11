@@ -15,23 +15,22 @@
 """Tests of Fourier basis entropy models."""
 
 import chex
-from codex.ems import equinox
-from codex.ems import fourier
 import equinox as eqx
 import jax
 import jax.numpy as jnp
-import numpy as np
+from codex.ems import equinox
+from codex.ems import fourier
 
 
 def test_autocorrelate_shape():
-  rng = jax.random.PRNGKey(0)
+  rng = jax.random.key(0)
   batch, length = 3, 5
   rnd = jax.random.normal(rng, (batch, length))
   assert fourier.autocorrelate(rnd).shape == (batch, length)
 
 
 def test_autocorrelate_correctness():
-  rng = jax.random.PRNGKey(0)
+  rng = jax.random.key(0)
   ix = jax.random.normal(rng, (10,))
 
   auto_corr1 = jax.numpy.correlate(ix, ix, mode='full')[len(ix) - 1 :]
@@ -45,29 +44,29 @@ def test_autocorrelate_correctness():
 
 def test_build_periodic_pdf_shape():
   num_freq, num_dims, length, period = 4, 2, 5, 1.0
-  x = jax.random.normal(jax.random.PRNGKey(0), (length, num_dims))
+  x = jax.random.normal(jax.random.key(0), (length, num_dims))
   pdf = equinox.PeriodicFourierEntropyModel(
-      jax.random.PRNGKey(0), num_freqs=num_freq, period=period,
+      jax.random.key(0), num_freqs=num_freq, period=period,
       num_pdfs=num_dims).prob(x)
   assert pdf.shape == (length, num_dims)
 
 
 def test_build_pdf_shape():
   num_freq, num_dims, length = 4, 2, 5
-  x = jax.random.normal(jax.random.PRNGKey(0), (length, num_dims))
+  x = jax.random.normal(jax.random.key(0), (length, num_dims))
   pdf = equinox.RealMappedFourierEntropyModel(
-      jax.random.PRNGKey(0), num_freqs=num_freq, num_pdfs=num_dims).prob(x)
+      jax.random.key(0), num_freqs=num_freq, num_pdfs=num_dims).prob(x)
   assert pdf.shape == (length, num_dims)
 
 
 def test_build_pdf_large_scale():
   num_freq, num_dims, length = 4, 2, 5
   em = equinox.RealMappedFourierEntropyModel(
-      jax.random.PRNGKey(0), num_freqs=num_freq, num_pdfs=num_dims,
+      jax.random.key(0), num_freqs=num_freq, num_pdfs=num_dims,
       init_scale=1)
   # Replace scale parameters.
   em = eqx.tree_at(lambda m: m.scale, em, em.scale * 1e6)
-  x = jax.random.normal(jax.random.PRNGKey(0), (length, num_dims))
+  x = jax.random.normal(jax.random.key(0), (length, num_dims))
   pdf = em.prob(x)
   assert jnp.all(pdf < 1e-4)
 
@@ -75,11 +74,11 @@ def test_build_pdf_large_scale():
 def test_build_pdf_small_scale():
   num_freq, num_dims, length = 4, 2, 10
   em = equinox.RealMappedFourierEntropyModel(
-      jax.random.PRNGKey(0), num_freqs=num_freq, num_pdfs=num_dims, init_scale=1
+      jax.random.key(0), num_freqs=num_freq, num_pdfs=num_dims, init_scale=1
   )
   # Replace scale parameters.
   em = eqx.tree_at(lambda m: m.scale, em, em.scale * 1e-9)
-  x = jax.random.normal(jax.random.PRNGKey(0), (length, num_dims))
+  x = jax.random.normal(jax.random.key(0), (length, num_dims))
   pdf = em.prob(x)
   assert jnp.all(jnp.max(pdf, axis=0) >= 1.0)
 
@@ -90,10 +89,10 @@ def test_build_pdf_integral_equal_one():
   x = jnp.linspace(-xlim, xlim, length)
   x = jnp.moveaxis(jnp.tile(x, (num_dims, 1)), -1, 0)
   em = equinox.RealMappedFourierEntropyModel(
-      jax.random.PRNGKey(0), num_freqs=num_freq, num_pdfs=num_dims,
+      jax.random.key(0), num_freqs=num_freq, num_pdfs=num_dims,
       init_scale=1)
   pdf = em.prob(x)
-  integral = jnp.round(np.trapz(pdf, dx=2.0 * xlim / length, axis=0), 3)
+  integral = jnp.round(jnp.trapezoid(pdf, dx=2.0 * xlim / length, axis=0), 3)
   assert jnp.all(integral == 1.0)
 
 
@@ -103,7 +102,7 @@ def test_build_pdf_non_negative():
   x = jnp.linspace(-xlim, xlim, length)
   x = jnp.moveaxis(jnp.tile(x, (num_dims, 1)), -1, 0)
   em = equinox.RealMappedFourierEntropyModel(
-      jax.random.PRNGKey(0), num_freqs=num_freq, num_pdfs=num_dims,
+      jax.random.key(0), num_freqs=num_freq, num_pdfs=num_dims,
       init_scale=1)
   pdf = em.prob(x)
   assert jnp.all(pdf >= 0)
@@ -111,18 +110,18 @@ def test_build_pdf_non_negative():
 
 def test_periodic_fourier_density_model_output_shape():
   em = equinox.PeriodicFourierEntropyModel(
-      jax.random.PRNGKey(0), num_freqs=10, period=2.0 * jnp.pi, num_pdfs=3)
+      jax.random.key(0), num_freqs=10, period=2.0 * jnp.pi, num_pdfs=3)
   num_dims, length = 3, 20
-  x = jax.random.normal(jax.random.PRNGKey(0), (length, num_dims))
+  x = jax.random.normal(jax.random.key(0), (length, num_dims))
   nll = em.neg_log_prob(x)
   chex.assert_shape(nll, (length, num_dims))
 
 
 def test_generalized_fourier_density_model_output_shape():
   em = equinox.RealMappedFourierEntropyModel(
-      jax.random.PRNGKey(0), num_freqs=10, num_pdfs=3)
+      jax.random.key(0), num_freqs=10, num_pdfs=3)
   num_dims, length = 3, 20
-  x = jax.random.normal(jax.random.PRNGKey(0), (length, num_dims))
+  x = jax.random.normal(jax.random.key(0), (length, num_dims))
   nll = em.neg_log_prob(x)
   chex.assert_shape(nll, (length, num_dims))
 
@@ -132,35 +131,35 @@ def test_generalized_fourier_density_model_integral_equal_one():
   center = jnp.linspace(-xlim, xlim, length)
   x = jnp.moveaxis(jnp.tile(center, (2, 1)), -1, 0)
   em = equinox.RealMappedFourierEntropyModel(
-      jax.random.PRNGKey(0), num_freqs=10, num_pdfs=2)
+      jax.random.key(0), num_freqs=10, num_pdfs=2)
   nll = em.neg_log_prob(x)
   pdf = jnp.exp(-nll)
-  integral = jnp.round(np.trapz(pdf, dx=2.0 * xlim / length, axis=0), 3)
+  integral = jnp.round(jnp.trapezoid(pdf, dx=2.0 * xlim / length, axis=0), 3)
   assert jnp.all(integral == 1.0)
 
 
 def test_fourier_entropy_model_output_shape():
   em = equinox.RealMappedFourierEntropyModel(
-      jax.random.PRNGKey(0), num_pdfs=3, num_freqs=10)
+      jax.random.key(0), num_pdfs=3, num_freqs=10)
   num_dims, length = 3, 20
-  x = jax.random.normal(jax.random.PRNGKey(0), (length, num_dims))
+  x = jax.random.normal(jax.random.key(0), (length, num_dims))
   prob = em.bin_prob(x)
   chex.assert_shape(prob, (length, num_dims))
 
 
 def test_fourier_periodic_entropy_model_output_shape():
   em = equinox.PeriodicFourierEntropyModel(
-      jax.random.PRNGKey(0), period=2.0 * jnp.pi, num_pdfs=3, num_freqs=10
+      jax.random.key(0), period=2.0 * jnp.pi, num_pdfs=3, num_freqs=10
   )
   num_dims, length = 3, 20
-  x = jax.random.normal(jax.random.PRNGKey(0), (length, num_dims))
+  x = jax.random.normal(jax.random.key(0), (length, num_dims))
   prob = em.bin_prob(x)
   chex.assert_shape(prob, (length, num_dims))
 
 
 def test_fourier_entropy_model_bin_prob_sum_values():
   em = equinox.RealMappedFourierEntropyModel(
-      jax.random.PRNGKey(0), num_pdfs=2, num_freqs=10)
+      jax.random.key(0), num_pdfs=2, num_freqs=10)
   x = jnp.linspace(-10, 10, 21)
   x = jnp.moveaxis(
       jnp.stack(
@@ -177,7 +176,7 @@ def test_fourier_entropy_model_bin_prob_sum_values():
 
 def test_periodic_fourier_entropy_model_bin_prob_sum_values():
   em = equinox.PeriodicFourierEntropyModel(
-      jax.random.PRNGKey(0), period=2.0, num_pdfs=2, num_freqs=15
+      jax.random.key(0), period=2.0, num_pdfs=2, num_freqs=15
   )
   x = jnp.array([-0.5, 0.5])
   x = jnp.moveaxis(
@@ -195,9 +194,9 @@ def test_periodic_fourier_entropy_model_bin_prob_sum_values():
 
 def test_fourier_bin_prob_and_bin_prob_are_consistent():
   em = equinox.RealMappedFourierEntropyModel(
-      jax.random.PRNGKey(0), num_pdfs=3, num_freqs=15)
+      jax.random.key(0), num_pdfs=3, num_freqs=15)
   num_dims, length = 3, 20
-  x = jax.random.normal(jax.random.PRNGKey(0), (length, num_dims))
+  x = jax.random.normal(jax.random.key(0), (length, num_dims))
   prob = em.bin_prob(x)
   bits_values = em.bin_bits(x)
   chex.assert_trees_all_close(prob, 2 ** -bits_values, atol=1e-7)
@@ -207,7 +206,7 @@ def test_periodic_fourier_bin_prob_accuracy():
   num_freq, num_dims, length = 15, 1, 1000
   x = jnp.linspace(-1.0, 0.0, length)
   em = equinox.PeriodicFourierEntropyModel(
-      jax.random.PRNGKey(0),
+      jax.random.key(0),
       period=2.0,
       num_freqs=num_freq,
       num_pdfs=num_dims,

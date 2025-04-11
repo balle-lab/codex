@@ -75,7 +75,7 @@ def main(_):
   )
 
   seed, = np.frombuffer(os.getrandom(8), dtype=np.int64)
-  rng = jax.random.PRNGKey(seed)
+  rng = jax.random.key(seed)
 
   train_set = load_training_set(
       FLAGS.config.patch_size, FLAGS.config.batch_size,
