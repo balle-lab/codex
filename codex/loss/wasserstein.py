@@ -24,6 +24,7 @@ from typing import Any
 import jax
 from jax import numpy as jnp
 from codex.ops import gradient
+from features import vgg16
 
 Array = jax.Array
 
@@ -124,6 +125,9 @@ def wasserstein_distortion(
     raise ValueError(
         f"features and `log2_sigma` must have same spatial shape, but received "
         f"{features_a.shape[-2:]} and {log2_sigma.shape}, respectively.")
+  if jnp.max(log2_sigma) > num_levels: # add an available check
+    raise ValueError("num_levels too small")
+
   means_a, variances_a = compute_multiscale_stats(features_a, num_levels)
   means_b, variances_b = compute_multiscale_stats(features_b, num_levels)
   assert len(means_a) == len(means_b) == len(variances_a) == len(variances_b)
@@ -227,3 +231,22 @@ def multi_wasserstein_distortion(
   if return_intermediates:
     return dist, intermediates
   return dist
+
+
+def vgg_wasserstein_distortion(img1, img2):
+  """
+  Calculate the feature distance between two images.
+  Extract feature map of each layer by VGG, then calculate distance with
+  wasserstein_distortion.
+  """
+  features_a = vgg16(img1)
+  features_b = vgg16(img2)
+
+  log2_sigma = jnp.full((224, 64), 4) # TODO Test different values of sigma
+  result = multi_wasserstein_distortion(features_a, features_b, log2_sigma)
+
+  return result
+
+
+if __name__ == "__main__":
+  print(vgg_wasserstein_distortion("./example_image/eleph1.jpg", "./example_image/eleph2.jpg"))
