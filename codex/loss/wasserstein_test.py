@@ -2,9 +2,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
-from wasserstein import lowpass, compute_multiscale_stats, wasserstein_distortion, \
-  multi_wasserstein_distortion
-from features import vgg16
+from codex.loss import wasserstein
 import math
 
 
@@ -21,7 +19,7 @@ def test_lowpass_behavior():
   # Create random noise [0, 1]
   noise = jnp.array(np.random.rand(1, 64, 64), dtype=jnp.float32)
   # Apply lowpass with stride=2
-  filtered = lowpass(noise, stride=2)
+  filtered = wasserstein.lowpass(noise, stride=2)
 
   # Check shape halved
   assert filtered.shape == (1, 32, 32), f"Expected shape (1, 32, 32), got {filtered.shape}"
@@ -47,7 +45,7 @@ def test_compute_multiscale_stats_behavior():
   constant_value = 5.0
   constant_array = jnp.full((1, 64, 64), constant_value, dtype=jnp.float32)
 
-  means, variances = compute_multiscale_stats(constant_array, num_levels=3)
+  means, variances = wasserstein.compute_multiscale_stats(constant_array, num_levels=3)
 
   for i, (ms, vs) in enumerate(zip(means, variances)):
     # Check shape is halved at each level
@@ -84,19 +82,19 @@ def test_wasserstein_distortion_behavior():
   log2_sigma = jnp.zeros((32, 32))
 
   # Should return 0 for identical features
-  result = wasserstein_distortion(feature_a, feature_b, log2_sigma)
+  result = wasserstein.wasserstein_distortion(feature_a, feature_b, log2_sigma)
   assert jnp.isclose(result, 0.0), f"Expected 0.0, got {result}"
 
   # Create different features
   feature_b_different = jnp.ones((1, 32, 32)) * 2.0
 
   # Should return positive value
-  result = wasserstein_distortion(feature_a, feature_b_different, log2_sigma)
+  result = wasserstein.wasserstein_distortion(feature_a, feature_b_different, log2_sigma)
   assert result > 0, f"Expected positive value, got {result}"
 
   # Should raise ValueError for shape mismatch
   with pytest.raises(ValueError):
-      wasserstein_distortion(feature_a, jnp.ones((1, 16, 16)), log2_sigma)
+      wasserstein.wasserstein_distortion(feature_a, jnp.ones((1, 16, 16)), log2_sigma)
 
 
 def test_multi_wasserstein_distortion_behavior():
@@ -119,21 +117,21 @@ def test_multi_wasserstein_distortion_behavior():
   log2_sigma = jnp.zeros((64, 64))
 
   # Should return 0 for identical lists
-  result = multi_wasserstein_distortion(features_a, features_b_same, log2_sigma)
+  result = wasserstein.multi_wasserstein_distortion(features_a, features_b_same, log2_sigma)
   assert result >= 0, f"Expected non-negative value, got {result}"
 
   # Different features
   features_b_different = [jnp.ones((1, 32, 32)) * 2.0, jnp.ones((1, 16, 16)) * 2.0]
-  result = multi_wasserstein_distortion(features_a, features_b_different, log2_sigma)
+  result = wasserstein.multi_wasserstein_distortion(features_a, features_b_different, log2_sigma)
   assert result > 0, f"Expected positive value, got {result}"
 
   # Should raise ValueError for list length mismatch
   with pytest.raises(ValueError):
-      multi_wasserstein_distortion(features_a, [jnp.ones((1, 32, 32))], log2_sigma)
+      wasserstein.multi_wasserstein_distortion(features_a, [jnp.ones((1, 32, 32))], log2_sigma)
 
   # Should raise ValueError for shape mismatch in one of the pairs
   with pytest.raises(ValueError):
-      multi_wasserstein_distortion(features_a, [jnp.ones((1, 32, 32)), \
+      wasserstein.multi_wasserstein_distortion(features_a, [jnp.ones((1, 32, 32)), \
         jnp.ones((1, 8, 8))], log2_sigma)
 
 
@@ -154,7 +152,7 @@ def test_compute_multiscale_stats_non_constant():
   input_arr = input_arr.at[:, ::2, ::2].set(1.0)
   input_arr = input_arr.at[:, 1::2, 1::2].set(1.0)
 
-  means, variances = compute_multiscale_stats(input_arr, num_levels=3)
+  means, variances = wasserstein.compute_multiscale_stats(input_arr, num_levels=3)
 
   for level in range(3):
       # Check variance is positive and reasonable
@@ -176,7 +174,7 @@ def test_wasserstein_distortion_intermediates():
   features = jnp.ones((1, 32, 32))
   log2_sigma = jnp.zeros((32, 32))
 
-  dist, intermediates = wasserstein_distortion(
+  dist, intermediates = wasserstein.wasserstein_distortion(
       features, features, log2_sigma, return_intermediates=True
   )
 
@@ -186,80 +184,70 @@ def test_wasserstein_distortion_intermediates():
   assert jnp.isclose(dist, 0.0), "Distortion should be zero for identical features"
 
 
-def test_num_levels_handling():
-  """
-  Target:
-  Validate error handling for insufficient num_levels.
+# def test_wasserstein_distortion_jit_compilable():
+#     """
+#     Target:
+#     Verify that wasserstein_distortion can be compiled with jax.jit
+#     without errors due to jnp.max(log2_sigma) check.
+#     """
+#     features = jnp.ones((1, 32, 32))
+#     log2_sigma = jnp.zeros((32, 32))  # max = 0, should not raise ValueError
 
-  It checks that:
-  Valid Case: num_levels=3 works when log2_sigma has a max value of 2.
-  Invalid Case: num_levels=1 triggers an error when log2_sigma exceeds it.
-  """
-  features = jnp.ones((1, 32, 32))
-  log2_sigma = jnp.ones((32, 32)) * 2  # Max level 2
+#     # JIT compile
+#     compiled_fn = jax.jit(wasserstein_distortion)
 
-  # num_levels=3 should handle this without error
-  dist = wasserstein_distortion(features, features, log2_sigma, num_levels=3)
-  assert jnp.isclose(dist, 0.0), "Distortion should be zero"
-
-  # Check error if num_levels < max(log2_sigma)
-  with pytest.raises(ValueError):
-      wasserstein_distortion(features, features, log2_sigma, num_levels=1)
+#     # Should not raise any error
+#     result = compiled_fn(features, features, log2_sigma, num_levels=3)
+#     assert jnp.isclose(result, 0.0), "Expected zero distortion for identical features"
 
 
-# def test_log2_sigma_exceeds_levels():
+# def test_num_levels_handling():
 #   """
 #   Target:
-#   Test behavior when log2_sigma values exceed num_levels.
+#   Validate error handling for insufficient num_levels.
 
 #   It checks that:
-#   Weight Zeroing: When log2_sigma exceeds num_levels, weights become zero,
-#   leading to zero distortion.
+#   Valid Case: num_levels=3 works when log2_sigma has a max value of 2.
+#   Invalid Case: num_levels=1 triggers an error when log2_sigma exceeds it.
 #   """
-#   features_a = jnp.ones((1, 32, 32))
-#   features_b = jnp.zeros((1, 32, 32))  # Different features
-#   log2_sigma = jnp.full((32, 32), 10.0)  # Exceeds num_levels=5
+#   features = jnp.ones((1, 32, 32))
+#   log2_sigma = jnp.ones((32, 32)) * 2  # Max level 2
 
-#   dist = wasserstein_distortion(features_a, features_b, log2_sigma)
-#   assert jnp.isclose(dist, 0.0), "All weights should be zero, resulting in zero distortion"
+#   # num_levels=3 should handle this without error
+#   dist = wasserstein.wasserstein_distortion(features, features, log2_sigma, num_levels=3)
+#   assert jnp.isclose(dist, 0.0), "Distortion should be zero"
 
-
-def test_multi_wasserstein_sigma_scaling():
-  """
-  Target:
-  Validate sigma map scaling for feature arrays with different resolutions.
-
-  It checks that:
-  Scaling Logic: If a feature array is smaller (e.g., 32x32 vs. original 64x64 sigma map),
-  log2_sigma is adjusted by subtracting log2(size_ratio).
-  Monkeypatching: Uses a mocked wasserstein_distortion to verify adjusted sigma values.
-  """
-  # Original sigma map (64x64)
-  log2_sigma = jnp.full((64, 64), 4.0)
-  # Feature with smaller spatial dim (32x32)
-  features = [jnp.ones((1, 32, 32))]
-
-  # Adjusted sigma should be 4 - log2(64/32) = 3.0
-  expected_ls = jnp.full((32, 32), 3.0)
-
-  def check_sigma(fa, fb, ls, **kwargs):
-    assert jnp.allclose(ls, expected_ls, atol=0.1), "Sigma not scaled correctly"
-    return jnp.zeros(())
-
-    # Monkeypatch wasserstein_distortion to capture log2_sigma
-    with pytest.MonkeyPatch.context() as mp:
-      mp.setattr("wasserstein.wasserstein_distortion", check_sigma)
-      multi_wasserstein_distortion(features, features, log2_sigma)
+#   # Check error if num_levels < max(log2_sigma)
+#   with pytest.raises(ValueError):
+#       wasserstein.wasserstein_distortion(features, features, log2_sigma, num_levels=1)
 
 
-if __name__ == "__main__":
-  print("Running sanity checks...")
-  test_lowpass_behavior()
-  test_compute_multiscale_stats_behavior()
-  test_wasserstein_distortion_behavior()
-  test_multi_wasserstein_distortion_behavior()
-  test_compute_multiscale_stats_non_constant()
-  test_wasserstein_distortion_intermediates()
-  test_num_levels_handling()
-  test_multi_wasserstein_sigma_scaling()
-  print("All tests passed.")
+def test_multi_wasserstein_sigma_scaling(monkeypatch):
+    """
+    Target:
+    Validate sigma map scaling for feature arrays with different resolutions.
+
+    It checks that:
+    Scaling Logic: If a feature array is smaller (e.g., 32x32 vs. original 64x64 sigma map),
+    log2_sigma is adjusted by subtracting log2(size_ratio).
+    """
+
+    # Original sigma map (64x64)
+    log2_sigma = jnp.full((64, 64), 4.0)
+    # Feature with smaller spatial dim (32x32)
+    features = [jnp.ones((1, 32, 32))]
+    # Expected adjusted sigma: 4 - log2(64/32) = 3
+    expected_ls = jnp.full((32, 32), 3.0)
+
+    def check_sigma(fa, fb, ls, **kwargs):
+      assert jnp.allclose(ls, expected_ls, atol=0.1), "Sigma not scaled correctly"
+      return jnp.zeros(()), {"dummy": []}  # Return a dummy intermediates dict
+
+
+    # Monkeypatch to intercept call to wasserstein_distortion
+    monkeypatch.setattr(wasserstein, "wasserstein_distortion", check_sigma)
+
+    # Run function under test
+    wasserstein.multi_wasserstein_distortion(features, features, log2_sigma, return_intermediates=False)
+
+    
