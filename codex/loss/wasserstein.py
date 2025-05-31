@@ -25,6 +25,8 @@ import jax
 from jax import numpy as jnp
 from codex.ops import gradient
 from codex.loss import features
+import chex
+import warnings
 
 Array = jax.Array
 
@@ -85,6 +87,21 @@ def compute_multiscale_stats(
     squared = p[..., ::2, ::2]
   return means, variances
 
+def check_log2_sigma_within_bounds(log2_sigma, num_levels):
+    def on_true(_):
+        jax.debug.print("WARNING: log2_sigma exceeds num_levels={}", num_levels)
+        return None
+
+    def on_false(_):
+        return None
+
+    return jax.lax.cond(
+        jnp.max(log2_sigma) >= num_levels,
+        on_true,
+        on_false,
+        operand=None
+    )
+
 
 def wasserstein_distortion(
     features_a: Array,
@@ -127,6 +144,7 @@ def wasserstein_distortion(
         f"{features_a.shape[-2:]} and {log2_sigma.shape}, respectively.")
 
   # FIXME: How to check max.log2_sigma <= num_levels, while ensuring it is JIT-compatible
+  check_log2_sigma_within_bounds(log2_sigma, num_levels)
 
   means_a, variances_a = compute_multiscale_stats(features_a, num_levels)
   means_b, variances_b = compute_multiscale_stats(features_b, num_levels)
@@ -239,11 +257,14 @@ def vgg_wasserstein_distortion(img1, img2):
   Extract feature map of each layer by VGG, then calculate distance with
   wasserstein_distortion.
   """
-  features_a = features.vgg16(img1)
-  features_b = features.vgg16(img2)
+  vgg, params = features.load_vgg_model()
+  img1_p = features.preprocess_image(img1)
+  img2_p = features.preprocess_image(img2)
+
+  features_a = features.extract_vgg_features(vgg, params, img1_p)
+  features_b = features.extract_vgg_features(vgg, params, img2_p)
 
   log2_sigma = jnp.full((224, 64), 4) # TODO Test different values of sigma
   result = multi_wasserstein_distortion(features_a, features_b, log2_sigma)
 
   return result
-

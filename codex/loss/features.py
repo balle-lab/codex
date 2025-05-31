@@ -2,6 +2,8 @@ from PIL import Image
 import jax
 import jax.numpy as jnp
 import flaxmodels as fm
+import os
+import sys
 
 
 def load_vgg_model():
@@ -27,4 +29,3 @@ def extract_vgg_features(model, params, x):
     activations = model.apply(params, x, train=False)
     selected_keys = ["relu1_2", "relu2_2", "relu3_3", "relu4_3", "relu5_3"]
     return [activations[key].squeeze(0) for key in selected_keys]
-  
