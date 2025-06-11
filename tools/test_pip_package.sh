@@ -19,7 +19,7 @@ python -m pip install -U "${WHEEL_PATH}"
 python -m pip show -f jax-codex
 
 # Runs unit tests.
-python -m pip install -U pytest chex distrax equinox flax
+python -m pip install -U pytest chex distrax equinox flax flaxmodels
 python -m pip list -v
 
 pushd "${VENV}"

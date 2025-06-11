@@ -14,6 +14,8 @@
 # ==============================================================================
 """Loss functions."""
 
+from codex.loss.pretrained_features import load_vgg16_model
+from codex.loss.pretrained_features import compute_vgg16_features
 from codex.loss.wasserstein import lowpass
 from codex.loss.wasserstein import multi_wasserstein_distortion
 from codex.loss.wasserstein import wasserstein_distortion
