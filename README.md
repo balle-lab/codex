@@ -34,10 +34,10 @@ To test that the installation works correctly, you can run the unit tests with:
 
 ```bash
 python -m pip install pytest chex tensorflow-probability flaxmodels
-pytest --pyargs codex
+pytest --pyargs --ignore-glob="**/range_ans_*" codex
 ```
 
-Once the command finishes, you should see a message ```13 passed in 2.76s``` or
+Once the command finishes, you should see a message ```82 passed in 33.70s``` or
 similar in the last line.
 
 ## Usage
