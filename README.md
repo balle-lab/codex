@@ -27,13 +27,13 @@ find the question or answer more easily later.
 To install CoDeX via `pip`, run the following command:
 
 ```bash
-python -m pip install jax-codex
+python -m pip install --upgrade git+https://github.com/balle-lab/codex.git
 ```
 
 To test that the installation works correctly, you can run the unit tests with:
 
 ```bash
-python -m pip install pytest chex tensorflow-probability
+python -m pip install pytest chex tensorflow-probability flaxmodels
 pytest --pyargs codex
 ```
 

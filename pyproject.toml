@@ -38,6 +38,7 @@ name = "codex"
 
 [tool.flit.sdist]
 exclude = [
+    "cc/*", "ecs/*",  # Disable range coding for now.
     "**/*.bazel",
     "**/*.cc",
     "**/*.h",
