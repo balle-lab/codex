@@ -23,6 +23,3 @@ poetry.lock
 
 # PyCharm
 .idea
-
-# Test images
-codex/loss/example_image

@@ -115,7 +115,7 @@ logging-modules = ["logging"]
 
 [tool.pylint."messages control"]
 confidence = ["HIGH", "CONTROL_FLOW", "INFERENCE", "INFERENCE_FAILURE", "UNDEFINED"]
-disable = ["abstract-method", "too-many-locals", "use-dict-literal"]
+disable = ["abstract-method", "too-many-locals", "use-dict-literal", "raise-missing-from"]
 enable = ["all"]
 
 [tool.pylint.method_args]
