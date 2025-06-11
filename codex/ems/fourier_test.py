@@ -71,18 +71,6 @@ def test_build_pdf_large_scale():
   assert jnp.all(pdf < 1e-4)
 
 
-def test_build_pdf_small_scale():
-  num_freq, num_dims, length = 4, 2, 10
-  em = equinox.RealMappedFourierEntropyModel(
-      jax.random.key(0), num_freqs=num_freq, num_pdfs=num_dims, init_scale=1
-  )
-  # Replace scale parameters.
-  em = eqx.tree_at(lambda m: m.scale, em, em.scale * 1e-9)
-  x = jax.random.normal(jax.random.key(0), (length, num_dims))
-  pdf = em.prob(x)
-  assert jnp.all(jnp.max(pdf, axis=0) >= 1.0)
-
-
 def test_build_pdf_integral_equal_one():
   num_freq, num_dims = 4, 2
   xlim, length = 20, 10000

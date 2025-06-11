@@ -16,8 +16,7 @@
 
 __version__ = '0.0.1'
 
-# Disable range coding for now.
-# from codex import ecs
+from codex import ecs
 from codex import ems
 from codex import loss
 from codex import ops

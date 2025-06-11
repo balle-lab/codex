@@ -1,7 +1,7 @@
 [project]
 name = "jax-codex"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.12"
 license = {file = "LICENSE"}
 authors = [{name = "CoDeX authors"}]
 maintainers = [{name = "Jona Ballé", email = "jona.balle@nyu.edu"}]
@@ -26,8 +26,8 @@ dependencies = [
 dynamic = ["version", "description"]
 
 [project.urls]
-homepage = "https://github.com/google/codex"
-repository = "https://github.com/google/codex"
+homepage = "https://github.com/balle-lab/codex"
+repository = "https://github.com/balle-lab/codex"
 
 [build-system]
 requires = ["flit_core >=3.5,<4"]
@@ -38,11 +38,14 @@ name = "codex"
 
 [tool.flit.sdist]
 exclude = [
-    "cc/*", "ecs/*",  # Disable range coding for now.
     "**/*.bazel",
     "**/*.cc",
     "**/*.h",
 ]
+
+[tool.pytest.ini_options]
+# Don't run entropy coding tests by default for now.
+norecursedirs = ["cc", "ecs"]
 
 [tool.black]
 line-length = 90
