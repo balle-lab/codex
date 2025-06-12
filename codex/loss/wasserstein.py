@@ -1,21 +1,19 @@
 # Copyright 2024 CoDeX authors.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+# file except in compliance with the License. You may obtain a copy of the License at
 #
 #     https://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
+# Unless required by applicable law or agreed to in writing, software distributed under
+# the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied. See the License for the specific language governing
+# permissions and limitations under the License.
+# ========================================================================================
 """Implementation of Wasserstein Distortion.
 
-Please refer to https://arxiv.org/abs/2310.03629 and https://arxiv.org/abs/2412.00505
-for details.
+Please refer to https://arxiv.org/abs/2310.03629 and https://arxiv.org/abs/2412.00505 for
+details.
 """
 
 import collections
@@ -62,9 +60,9 @@ def lowpass(inputs: Array, stride: int) -> Array:
         The lowpass filtered array of shape (batch, height, width). Height and width are
         the same as the input array if stride is 1.
     """
-    # Lowpass filter. Weights sum to one so that the output dynamic range is the
-    # same as the input's. Its frequency response will cause some alias when
-    # downsampling, but we accept that because a 3x3 filter is reasonably fast.
+    # Lowpass filter. Weights sum to one so that the output dynamic range is the same as
+    # the input's. Its frequency response will cause some alias when downsampling, but we
+    # accept that because a 3x3 filter is reasonably fast.
     kernel = jnp.array([0.25, 0.5, 0.25])
     kernel = jnp.outer(kernel, kernel)[None, None]  # shape: (1, 1, 3, 3)
     return jax.lax.conv(
@@ -176,12 +174,12 @@ def wasserstein_distortion(
     wd_maps = [jnp.square(features_a - features_b)]
     for ma, mb, va, vb in zip(means_a, means_b, variances_a, variances_b):
         assert ma.shape == mb.shape == va.shape == vb.shape
-        # Variance estimates can turn out slightly negative due to numerics. This
-        # brings such estimates up to zero, but passes through a useful gradient.
+        # Variance estimates can turn out slightly negative due to numerics. This brings
+        # such estimates up to zero, but passes through a useful gradient.
         va = gradient.lower_limit(va, 0)
         vb = gradient.lower_limit(vb, 0)
-        # The square root has unbounded gradients near zero. This limits the
-        # gradient to a finite value.
+        # The square root has unbounded gradients near zero. This limits the gradient to a
+        # finite value.
         sa = safe_sqrt(va, sqrt_grad_limit)
         sb = safe_sqrt(vb, sqrt_grad_limit)
         wd_maps.append(jnp.square(ma - mb) + jnp.square(sa - sb))
@@ -288,11 +286,10 @@ def multi_wasserstein_distortion(
             )
         # Resize the sigma map to match the feature arrays.
         ls = jax.image.resize(log2_sigma, fa.shape[-2:], "linear", antialias=True)
-        # Rescale sigma to match the feature arrays. For example, if a feature array
-        # has a very low spatial resolution, we make sigma correspondingly smaller,
-        # because each element in the feature array covers a larger portion of the
-        # image. Since we are in log space, we subtract the log of the size ratio
-        # and then cap at zero.
+        # Rescale sigma to match the feature arrays. For example, if a feature array has a
+        # very low spatial resolution, we make sigma correspondingly smaller, because each
+        # element in the feature array covers a larger portion of the image. Since we are
+        # in log space, we subtract the log of the size ratio and then cap at zero.
         log_ratio_h = jnp.log2(log2_sigma.shape[-2] / fa.shape[-2])
         log_ratio_w = jnp.log2(log2_sigma.shape[-1] / fa.shape[-1])
         mean_log_ratio = (log_ratio_h + log_ratio_w) / 2

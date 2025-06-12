@@ -9,7 +9,7 @@
 # the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 # KIND, either express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
-# ==============================================================================
+# ========================================================================================
 """Loss functions."""
 
 from codex.loss.pretrained_features import load_vgg16_model
