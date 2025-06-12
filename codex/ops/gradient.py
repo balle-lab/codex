@@ -17,10 +17,11 @@ import jax
 import jax.numpy as jnp
 
 Array = jax.Array
+ArrayLike = jax.typing.ArrayLike
 
 
 @jax.custom_vjp
-def upper_limit(inputs: Array, limit: Array) -> Array:
+def upper_limit(inputs: ArrayLike, limit: ArrayLike) -> Array:
     """Limits an array from above, with faked gradients.
 
     In contrast to `jnp.minimum`, this function never returns a gradient for `limit`, and
@@ -43,7 +44,7 @@ def upper_limit(inputs: Array, limit: Array) -> Array:
 
 
 @jax.custom_vjp
-def lower_limit(inputs: Array, limit: Array) -> Array:
+def lower_limit(inputs: ArrayLike, limit: ArrayLike) -> Array:
     """Limits an array from below, with faked gradients.
 
     In contrast to `jnp.maximum`, this function never returns a gradient for `limit`, and
@@ -91,7 +92,7 @@ upper_limit.defvjp(upper_limit_fwd, upper_limit_bwd)
 lower_limit.defvjp(lower_limit_fwd, lower_limit_bwd)
 
 
-def perturb_and_apply(f: Callable, x: Array, u: Array, *args) -> Array:
+def perturb_and_apply(f: Callable, x: ArrayLike, u: ArrayLike, *args) -> Array:
     """Perturbs the inputs of a pointwise function using JAX.
 
     This function adds uniform noise in the range -0.5 to 0.5 to the first argument of the
@@ -118,7 +119,8 @@ def perturb_and_apply(f: Callable, x: Array, u: Array, *args) -> Array:
 
     Notes
     -----
-    This function is further described in Sec. 4.2. of [1]_.
+    This function is further described in Sec. 4.2. of [1]_. Please cite the paper if you
+    use this code for scientific work.
 
     .. [1] E. Agustsson, L. Theis: "Universally Quantized Neural Compression," Adv. in
        Neural Information Processing Systems, vol. 33, 2020.

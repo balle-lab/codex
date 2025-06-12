@@ -24,6 +24,7 @@ except ImportError:
     fm = None
 
 Array = jax.Array
+ArrayLike = jax.typing.ArrayLike
 
 _MODELS = {}
 
@@ -50,7 +51,7 @@ def load_vgg16_model(mock: bool = False) -> None:
     _MODELS["vgg16"] = (vgg, params)
 
 
-def compute_vgg16_features(image: Array, num_scales: int = 3) -> list[Array]:
+def compute_vgg16_features(image: ArrayLike, num_scales: int = 3) -> list[Array]:
     """Extracts VGG features from an image.
 
     Parameters
@@ -76,7 +77,7 @@ def compute_vgg16_features(image: Array, num_scales: int = 3) -> list[Array]:
     mean = jnp.array([0.485, 0.456, 0.406]).reshape((-1, 1, 1)).astype(image.dtype)
     std = jnp.array([0.229, 0.224, 0.225]).reshape((-1, 1, 1)).astype(image.dtype)
     image = (image - mean) / std
-    features = [image]
+    features: list[Array] = [image]  # type:ignore
     for _ in range(num_scales):
         activations = vgg.apply(params, image.transpose((1, 2, 0))[None], train=False)
         features.extend(activations[l].squeeze(0).transpose((2, 0, 1)) for l in layers)

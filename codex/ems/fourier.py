@@ -29,8 +29,8 @@ def autocorrelate(sequence: Array, precision=None) -> Array:
     Parameters
     ----------
     sequence
-        Array of shape `(batch, length)`, where `batch` is the number of independent
-        sequences to correlate with themselves, and `length` is the length of each
+        Array of shape ``(batch, length)``, where ``batch`` is the number of independent
+        sequences to correlate with themselves, and ``length`` is the length of each
         sequence.
     precision
         See `jax.lax.conv_general_dilated`.
@@ -38,9 +38,9 @@ def autocorrelate(sequence: Array, precision=None) -> Array:
     Returns
     -------
     Array
-        Shape `(batch, length)`. The right half of each autocorrelation sequence. The left
-        half is redundant due to symmetry (even for the real part, odd for the imaginary
-        part).
+        Shape ``(batch, length)``. The right half of each autocorrelation sequence. The
+        left half is redundant due to symmetry (even for the real part, odd for the
+        imaginary part).
     """
     batch, length = sequence.shape
     return jax.lax.conv_general_dilated(
@@ -70,8 +70,8 @@ def periodic_prob(coef: Array, x: Array, y: Array = None) -> Array:
     Returns
     -------
     Array
-        If `y` is not provided: `p(x)`, where `p` is the PDF. If `y` is provided: `P(y) -
-        P(x)`, where `P` is the CDF.
+        If `y` is not provided: ``p(x)``, where ``p`` is the PDF. If `y` is provided:
+        ``P(y) - P(x)``, where ``P`` is the CDF.
     """
     _, num_freqs = coef.shape
 
@@ -119,7 +119,7 @@ class PeriodicFourierEntropyModelBase(continuous.ContinuousEntropyModel):
 
         return periodic_prob(coef, g_inv) * dg_inv_dx
 
-    def neg_log_prob(self, x: Array, eps: float = 1e-20) -> Array:
+    def neg_log_prob(self, x: ArrayLike, eps: float = 1e-20) -> Array:
         p = self.prob(x)
         p = jnp.maximum(p, eps)
         return -jnp.log(p)

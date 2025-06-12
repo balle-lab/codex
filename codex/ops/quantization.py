@@ -43,7 +43,8 @@ def soft_round(x: ArrayLike, temperature: ArrayLike | None) -> Array:
     Notes
     -----
     This function is further described in Sec. 4.1. of [1]_. The temperature argument is
-    the reciprocal of `alpha` in the paper.
+    the reciprocal of `alpha` in the paper. Please cite the paper if you use this code for
+    scientific work.
 
     .. [1] E. Agustsson, L. Theis: "Universally Quantized Neural Compression," Adv. in
        Neural Information Processing Systems, vol. 33, 2020.
@@ -92,7 +93,8 @@ def soft_round_inverse(x: ArrayLike, temperature: ArrayLike | None) -> Array:
     Notes
     -----
     This function is further described in Sec. 4.1. of [1]_. The temperature argument is
-    the reciprocal of `alpha` in the paper.
+    the reciprocal of `alpha` in the paper. Please cite the paper if you use this code for
+    scientific work.
 
     .. [1] E. Agustsson, L. Theis: "Universally Quantized Neural Compression," Adv. in
        Neural Information Processing Systems, vol. 33, 2020.
@@ -142,17 +144,18 @@ def soft_round_conditional_mean(x: ArrayLike, temperature: ArrayLike | None) -> 
     Notes
     -----
     This function is further described in Sec. 4.1. of [1]_. The temperature argument is
-    the reciprocal of `alpha` in the paper.
+    the reciprocal of `alpha` in the paper. Please cite the paper if you use this code for
+    scientific work.
 
     .. [1] E. Agustsson, L. Theis: "Universally Quantized Neural Compression," Adv. in
        Neural Information Processing Systems, vol. 33, 2020.
        https://arxiv.org/abs/2006.09952
     """
-    return soft_round_inverse(x - 0.5, temperature) + 0.5
+    return soft_round_inverse(x - 0.5, temperature) + 0.5  # pytype: ignore
 
 
 @functools.partial(jax.custom_jvp, nondiff_argnums=(2,))
-def ste_argmax(logits: Array, temperature: Array, axis=-1) -> Array:
+def ste_argmax(logits: ArrayLike, temperature: ArrayLike, axis=-1) -> Array:
     """`jnp.argmax` with straight-through gradient estimation.
 
     The gradient of this function is overridden to be the gradient of::

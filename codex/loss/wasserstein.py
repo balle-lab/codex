@@ -22,10 +22,11 @@ from codex.loss import pretrained_features
 from codex.ops import gradient
 
 Array = jax.Array
+ArrayLike = jax.typing.ArrayLike
 
 
 @functools.partial(jax.custom_jvp, nondiff_argnums=(1,))
-def safe_sqrt(x: Array, limit: float) -> Array:
+def safe_sqrt(x: ArrayLike, limit: float) -> Array:
     """`jnp.sqrt` with capped gradient."""
     del limit  # unused in forward pass
     return jnp.sqrt(x)
@@ -40,7 +41,7 @@ def safe_sqrt_jvp(limit, primals, tangents):
     return safe_sqrt(x, limit), sqrt_dot
 
 
-def lowpass(inputs: Array, stride: int) -> Array:
+def lowpass(inputs: ArrayLike, stride: int) -> Array:
     """Lowpass filters an array of shape ``(batch, height, width)``.
 
     Parameters
@@ -70,7 +71,7 @@ def lowpass(inputs: Array, stride: int) -> Array:
 
 
 def compute_multiscale_stats(
-    features: Array,
+    features: ArrayLike,
     num_levels: int,
 ) -> tuple[list[Array], list[Array]]:
     """Computes local mean and variance of a feature array."""
@@ -89,8 +90,8 @@ def compute_multiscale_stats(
 
 @overload
 def wasserstein_distortion(
-    features_a: Array,
-    features_b: Array,
+    features_a: ArrayLike,
+    features_b: ArrayLike,
     log2_sigma: Array,
     *,
     num_levels: int = 5,
@@ -101,8 +102,8 @@ def wasserstein_distortion(
 
 @overload
 def wasserstein_distortion(
-    features_a: Array,
-    features_b: Array,
+    features_a: ArrayLike,
+    features_b: ArrayLike,
     log2_sigma: Array,
     *,
     num_levels: int = 5,
@@ -112,8 +113,8 @@ def wasserstein_distortion(
 
 
 def wasserstein_distortion(
-    features_a: Array,
-    features_b: Array,
+    features_a: ArrayLike,
+    features_b: ArrayLike,
     log2_sigma: Array,
     *,
     num_levels: int = 5,
@@ -154,7 +155,8 @@ def wasserstein_distortion(
     Notes
     -----
     For an introduction to Wasserstein Distortion, refer to [1]_. For a description of
-    this implementation, refer to [2]_.
+    this implementation, refer to [2]_. Please cite the paper if you use this code for
+    scientific work.
 
     .. [1] Y. Qiu, A. B. Wagner, J. Ballé, L. Theis: "Wasserstein Distortion: Unifying
        Fidelity and Realism," 2024 58th Ann. Conf. on Information Sciences and Systems
@@ -182,7 +184,7 @@ def wasserstein_distortion(
     means_b, variances_b = compute_multiscale_stats(features_b, num_levels)
     assert len(means_a) == len(means_b) == len(variances_a) == len(variances_b)
 
-    wd_maps = [jnp.square(features_a - features_b)]
+    wd_maps = [jnp.square(features_a - features_b)]  # type: ignore
     for ma, mb, va, vb in zip(means_a, means_b, variances_a, variances_b):
         assert ma.shape == mb.shape == va.shape == vb.shape
         # Variance estimates can turn out slightly negative due to numerics. This brings
@@ -284,7 +286,8 @@ def multi_wasserstein_distortion(
     Notes
     -----
     For an introduction to Wasserstein Distortion, refer to [1]_. For a description of
-    this implementation, refer to [2]_.
+    this implementation, refer to [2]_. Please cite the paper if you use this code for
+    scientific work.
 
     .. [1] Y. Qiu, A. B. Wagner, J. Ballé, L. Theis: "Wasserstein Distortion: Unifying
        Fidelity and Realism," 2024 58th Ann. Conf. on Information Sciences and Systems
@@ -336,8 +339,8 @@ def multi_wasserstein_distortion(
 
 
 def vgg16_wasserstein_distortion(
-    image_a: Array,
-    image_b: Array,
+    image_a: ArrayLike,
+    image_b: ArrayLike,
     log2_sigma: Array,
     *,
     num_scales: int = 3,
@@ -360,7 +363,7 @@ def vgg16_wasserstein_distortion(
         The number of scales of the image the features should be computed on. The image
         will be downsampled ``num_scales - 1`` times and VGG features computed on the
         original image plus the downsampled versions. The concatenated list of all
-        features will be returned.
+        features will be used to compute the distortion.
     num_levels
         The number of multi-scale levels of the feature statistics to compute. Must be
         greater or equal to the maximum of `log2_sigma`.
@@ -375,7 +378,8 @@ def vgg16_wasserstein_distortion(
 
     Notes
     -----
-    This is the distortion loss function used in [1]_.
+    This is the distortion loss function used in [1]_. Please cite the paper if you use
+    this code for scientific work.
 
     .. [1] J. Ballé, L. Versari, E. Dupont, H. Kim, M. Bauer: "Good, Cheap,
        and Fast: Overfitted Image Compression with Wasserstein Distortion," 2025 IEEE/CVF

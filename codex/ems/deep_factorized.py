@@ -12,7 +12,7 @@
 # ========================================================================================
 """Deep fully factorized entropy model based on cumulative density."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import override
 import jax
 from jax import nn
@@ -23,42 +23,38 @@ from codex.ops import quantization
 Array = jax.Array
 ArrayLike = jax.typing.ArrayLike
 
-# TODO(jonaballe): Convert docstrings to numpy format.
 
+def matrix_init(shape: Sequence[int], scale: float) -> Array:
+    """Initializes matrix with constant value according to `scale`.
 
-def matrix_init(shape, scale):
-    """Initializes matrix with constant value according to init_scale.
+    This initialization function was designed to avoid the early training stall due to too
+    large or too small probability mass values computed with the initial parameters.
 
-    This initialization function was designed to avoid the early training
-    stall due to too large or too small probability mass values computed
-    with the initial parameters.
+    Softplus is applied to the matrix during the forward pass, to ensure the matrix
+    elements are all positive. With the current initialization, the matrix has constant
+    values and after matrix-vector multiplication with the input, the output vector
+    elements are constant::
 
-    Softplus is applied to the matrix during the forward pass, to ensure the
-    matrix elements are all positive. With the current initialization, the
-    matrix has constant values and after matrix-vector multiplication with
-    the input, the output vector elements are constant
+        x / scale ** (1 / 1 + len(num_units))
 
-    ```
-    x / init_scale ** (1 / 1 + len(num_units)).
-    ```
+    Assuming zero bias initialization and ignoring the factor residual paths, the CDF
+    output of the entire distribution network is constant vector with value::
 
-    Assuming zero bias initialization and ignoring the factor residual
-    paths, the CDF output of the entire distribution network is constant
-    vector with value
+        sigmoid(x / scale)
 
-    ```
-    sigmoid(x / init_scale).
-    ```
+    Therefore `scale` should be in the order of the expected magnitude of ``x``.
 
-    Therefore `init_scale` should be in the order of the expected magnitude
-    of `x`.
+    Parameters
+    ----------
+    shape
+        Two integers, the shape of the matrix.
+    scale
+        Scale factor for initial value.
 
-    Args:
-      shape: Sequence of integers. The shape of the matrix.
-      scale: Scale factor for initial value.
-
-    Returns:
-      The initial matrix value.
+    Returns
+    -------
+    Array
+        The initial matrix value.
     """
     return jnp.full(shape, jnp.log(jnp.expm1(1 / scale / shape[-1])))
 
@@ -70,7 +66,7 @@ class MonotonicMLPBase:
     biases: list[Array]
     factors: list[Array]
 
-    def __call__(self, x):
+    def __call__(self, x: Array) -> Array:
         x = x[..., None]
         assert len(self.matrices) == len(self.biases) == len(self.factors) + 1
         for matrix, bias, factor in zip(self.matrices, self.biases, self.factors):
@@ -85,23 +81,23 @@ class MonotonicMLPBase:
 class DeepFactorizedEntropyModelBase(continuous.ContinuousEntropyModel):
     r"""Fully factorized entropy model based on neural network cumulative.
 
-    This is a flexible, nonparametric entropy model, described in appendix 6.1 of
-    the paper:
-
-    > "Variational image compression with a scale hyperprior"<br />
-    > J. Ballé, D. Minnen, S. Singh, S. J. Hwang, N. Johnston<br />
-    > https://openreview.net/forum?id=rkcQFMZRb
-
-    convolved with a unit-width uniform density, as described in appendix 6.2 of
-    the same paper. Please cite the paper if you use this code for scientific
-    work.
-
-    This model learns a factorized distribution. For example, if the input has
-    64 channels (the last dimension size), then the distribution has the form
+    This is a flexible, nonparametric entropy model convolved with a unit-width uniform
+    density. The model learns a factorized distribution. For example, if the input has 64
+    channels (the last dimension size), then the distribution has the form::
 
        CDF(x) = \prod_{i=1}^64 CDF_i(x_i)
 
-    where each function CDF_i is modeled by MLPs of different parameters.
+    where each function ``CDF_i`` is modeled by MLPs of different parameters.
+
+    Notes
+    -----
+    This model is further described in appendix 6.1 of [1]_. Convolution with a unit-width
+    uniform distribution is described in appendix 6.2, ibid. Please cite the paper if you
+    use this code for scientific work.
+
+    .. [1] J. Ballé, D. Minnen, S. Singh, S. J. Hwang, N. Johnston: "Variational image
+       compression with a scale hyperprior," 6th Int. Conf. on Learning Representations
+       (ICLR), 2018. https://openreview.net/forum?id=rkcQFMZRb
     """
 
     cdf_logits: Callable

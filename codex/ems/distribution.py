@@ -70,30 +70,33 @@ def bin_bits(
     return continuous.logsum_expbig_minus_expsmall(big, small) / -jnp.log(2.0)
 
 
-def scale_param(param, levels, log_scale_min=-10.0, log_scale_max=10.0):
+def scale_param(
+    param: ArrayLike,
+    levels: int,
+    log_scale_min: float = -10.0,
+    log_scale_max: float = 10.0,
+):
     """Returns a scale parameter for a `Distribution`.
 
     Input could be a neural network output or a model parameter. The function limits the
     scale to a finite range, which prevents numerical issues, and sets up the scale for
     quantization, which is needed for range coding.
 
-    Example usage in a conditional entropy model:
+    Example usage in a conditional entropy model::
 
-    ```
-    class ConditionalEntropyModel(cdx.ems.DistributionEntropyModel):
-        param: Array
+        class ConditionalEntropyModel(cdx.ems.DistributionEntropyModel):
+            param: Array
 
-        @property
-        def distribution(self):
-            loc = self.param[..., 0::2]
-            scale = cdx.ems.scale_param(self.param[..., 1::2], 20)
-            return tfp.distributions.Normal(loc=loc, scale=scale)
-    ```
+            @property
+            def distribution(self):
+                loc = self.param[..., 0::2]
+                scale = cdx.ems.scale_param(self.param[..., 1::2], 20)
+                return tfp.distributions.Normal(loc=loc, scale=scale)
 
     Parameters
     ----------
     param
-        An array with expected values in the range [0, `levels`]. Values outside this
+        An array with expected values in the range ``[0, levels]``. Values outside this
         range are clipped by this function. For example, this could be the output of a
         neural network ending in a linear layer.
     levels
@@ -106,9 +109,9 @@ def scale_param(param, levels, log_scale_min=-10.0, log_scale_max=10.0):
     Returns
     -------
     Array
-        `jnp.exp(A + B * param)`, where `A` and `B` are chosen such that the active range
-        for `param` is [0, `levels`], and the output of the function is in the range
-        [`jnp.exp(log_scale_min)`, `jnp.exp(log_scale_max)`].
+        ``jnp.exp(A + B * param)``, where ``A`` and ``B`` are chosen such that the active
+        range for `param` is ``[0, levels]``, and the output of the function is in the
+        range ``[jnp.exp(log_scale_min), jnp.exp(log_scale_max)]``.
     """
     param = gradient.lower_limit(param, 0)
     param = gradient.upper_limit(param, levels)
@@ -125,9 +128,9 @@ class DistributionEntropyModel(continuous.ContinuousEntropyModel):
         The `Distribution` object. It needs to implement `log_survival_function` and
         `log_cdf`.
     even_symmetric
-        If `True`, indicates that `distribution` is guaranteed to be symmetric around zero
-        (p(x) = p(-x) for any x). This simplifies computations in `bin_prob`/`bin_bits`.
-        Defaults to `False`.
+        If ``True``, indicates that `distribution` is guaranteed to be symmetric around
+        zero (``p(x) = p(-x)`` for any ``x``). This simplifies computations in
+        `bin_prob`/`bin_bits`. Defaults to `False`.
     """
 
     even_symmetric: ClassVar[bool] = False

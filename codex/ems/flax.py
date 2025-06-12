@@ -19,21 +19,22 @@ from codex.ems import deep_factorized as _deep_factorized
 from codex.ems import fourier as _fourier
 from codex.ems import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
-# TODO(jonaballe): Convert docstrings to numpy format.
-
 
 class MonotonicMLP(_deep_factorized.MonotonicMLPBase, _nn.Module):
     """MLP that implements monotonically increasing functions by construction.
 
-    Attributes:
-      num_mlps: Integer. Number of independent MLPs.
-      num_units: Iterable of integers. The number of filters for each of the
-        hidden layers. The first and last layer of the network implementing the
-        cumulative distribution are not included (they are assumed to be 1).
-      init_scale: Float. Scale factor for the density at initialization. It is
-        recommended to choose a large enough scale factor such that most values
-        initially lie within a region of high likelihood. This improves
-        training.
+    Attributes
+    ----------
+    num_mlps
+        Number of independent MLPs.
+    num_units
+        The number of filters for each of the hidden layers. The first and last layer of
+        the network implementing the cumulative distribution are not included (they are
+        assumed to be 1).
+    init_scale
+        Scale factor for the density at initialization. It is recommended to choose a
+        large enough scale factor such that most values initially lie within a region of
+        high likelihood. This improves training.
     """
 
     num_mlps: int
@@ -79,36 +80,38 @@ class DeepFactorizedEntropyModel(
 ):
     r"""Fully factorized entropy model based on neural network cumulative.
 
-    This is a flexible, nonparametric entropy model, described in appendix 6.1 of
-    the paper:
-
-    > "Variational image compression with a scale hyperprior"<br />
-    > J. Ballé, D. Minnen, S. Singh, S. J. Hwang, N. Johnston<br />
-    > https://openreview.net/forum?id=rkcQFMZRb
-
-    convolved with a unit-width uniform density, as described in appendix 6.2 of
-    the same paper. Please cite the paper if you use this code for scientific
-    work.
-
-    This model learns a factorized distribution. For example, if the input has
-    64 channels (the last dimension size), then the distribution has the form
+    This is a flexible, nonparametric entropy model convolved with a unit-width uniform
+    density. The model learns a factorized distribution. For example, if the input has 64
+    channels (the last dimension size), then the distribution has the form::
 
        CDF(x) = \prod_{i=1}^64 CDF_i(x_i)
 
-    where each function CDF_i is modeled by MLPs of different parameters.
+    where each function ``CDF_i`` is modeled by MLPs of different parameters.
 
-    Attributes:
-      num_pdfs: Integer. The number of distinct scalar PDFs on the right of the
-        input array. These are treated as independent, but non-identically
-        distributed. The remaining array elements on the left are treated as
-        i.i.d. (like in a batch dimension).
-      num_units: Iterable of integers. The number of filters for each of the
-        hidden layers. The first and last layer of the network implementing the
-        cumulative distribution are not included (they are assumed to be 1).
-      init_scale: Float. Scale factor for the density at initialization. It is
-        recommended to choose a large enough scale factor such that most values
-        initially lie within a region of high likelihood. This improves
-        training.
+    Attributes
+    ----------
+    num_pdfs
+        The number of distinct scalar PDFs on the right of the input array. These are
+        treated as independent, but non-identically distributed. The remaining array
+        elements on the left are treated as i.i.d. (like in a batch dimension).
+    num_units
+        The number of filters for each of the hidden layers. The first and last layer of
+        the network implementing the cumulative distribution are not included (they are
+        assumed to be 1).
+    init_scale
+        Scale factor for the density at initialization. It is recommended to choose a
+        large enough scale factor such that most values initially lie within a region of
+        high likelihood. This improves training.
+
+    Notes
+    -----
+    This model is further described in appendix 6.1 of [1]_. Convolution with a unit-width
+    uniform distribution is described in appendix 6.2, ibid. Please cite the paper if you
+    use this code for scientific work.
+
+    .. [1] J. Ballé, D. Minnen, S. Singh, S. J. Hwang, N. Johnston: "Variational image
+       compression with a scale hyperprior," 6th Int. Conf. on Learning Representations
+       (ICLR), 2018. https://openreview.net/forum?id=rkcQFMZRb
     """
 
     num_pdfs: int
@@ -123,16 +126,18 @@ class DeepFactorizedEntropyModel(
 class PeriodicFourierEntropyModel(_fourier.PeriodicFourierEntropyModelBase, _nn.Module):
     """Fourier basis entropy model mapped to the real line.
 
-    Attributes:
-      period: Float. Length of interval on `x` over which entropy model is
-        periodic.
-      num_pdfs: Integer. The number of distinct scalar PDFs on the right of the
-        input array. These are treated as independent, but non-identically
-        distributed. The remaining array elements on the left are treated as
-        i.i.d. (like in a batch dimension).
-      num_freqs: Integer. Number of frequency components of the Fourier series.
-      init_scale: Float. Scale of normal distribution for random initialization
-        of coefficients.
+    Attributes
+    ----------
+    period
+        Length of interval on `x` over which entropy model is periodic.
+    num_pdfs
+        The number of distinct scalar PDFs on the right of the input array. These are
+        treated as independent, but non-identically distributed. The remaining array
+        elements on the left are treated as i.i.d. (like in a batch dimension).
+    num_freqs
+        Number of frequency components of the Fourier series.
+    init_scale
+        Scale of normal distribution for random initialization of coefficients.
     """
 
     period: float
@@ -156,14 +161,16 @@ class RealMappedFourierEntropyModel(
 ):
     """Fourier basis entropy model mapped to the real line.
 
-    Attributes:
-      num_pdfs: Integer. The number of distinct scalar PDFs on the right of the
-        input array. These are treated as independent, but non-identically
-        distributed. The remaining array elements on the left are treated as
-        i.i.d. (like in a batch dimension).
-      num_freqs: Integer. Number of frequency components of the Fourier series.
-      init_scale: Float. Scale of normal distribution for random initialization
-        of coefficients.
+    Attributes
+    ----------
+    num_pdfs
+        The number of distinct scalar PDFs on the right of the input array. These are
+        treated as independent, but non-identically distributed. The remaining array
+        elements on the left are treated as i.i.d. (like in a batch dimension).
+    num_freqs
+        Number of frequency components of the Fourier series.
+    init_scale
+        Scale of normal distribution for random initialization of coefficients.
     """
 
     num_pdfs: int
