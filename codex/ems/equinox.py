@@ -108,7 +108,7 @@ class DeepFactorizedEntropyModel(
         training.
     """
     super().__init__()
-    self.cdf_logits = MonotonicMLP(rng, num_pdfs, num_units, init_scale)  # type:ignore
+    self.cdf_logits = MonotonicMLP(rng, num_pdfs, num_units, init_scale)  # type: ignore
 
 
 class PeriodicFourierEntropyModel(_fourier.PeriodicFourierEntropyModelBase,

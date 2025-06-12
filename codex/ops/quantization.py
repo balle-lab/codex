@@ -55,10 +55,10 @@ def soft_round(x: ArrayLike, temperature: ArrayLike | None) -> Array:
     return m + r
 
   return jnp.where(
-      temperature < 1e-4,  # type:ignore
+      temperature < 1e-4,  # type: ignore
       jnp.round(x),
       jnp.where(
-          temperature > 1e4,  # type:ignore
+          temperature > 1e4,  # type: ignore
           x,
           _soft_round(x, jnp.clip(temperature, 1e-4, 1e4)),
       ),
@@ -95,10 +95,10 @@ def soft_round_inverse(x: ArrayLike, temperature: ArrayLike | None) -> Array:
     return m + r
 
   return jnp.where(
-      temperature < 1e-4,  # type:ignore
+      temperature < 1e-4,  # type: ignore
       jnp.ceil(x) - .5,
       jnp.where(
-          temperature > 1e4,  # type:ignore
+          temperature > 1e4,  # type: ignore
           x,
           _sr_inverse(x, jnp.clip(temperature, 1e-4, 1e4)),
       ),

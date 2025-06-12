@@ -33,7 +33,7 @@ def test_logistic_is_special_case():
   x = jnp.linspace(-5., 5., 30)[:, None]
   prob_em = em.bin_prob(x)
   logistic = distrax.Logistic(loc=-em.cdf_logits.biases[0][0, 0], scale=1.)
-  prob_log = logistic.cdf(x + .5) - logistic.cdf(x - .5)  # type:ignore
+  prob_log = logistic.cdf(x + .5) - logistic.cdf(x - .5)  # type: ignore
   chex.assert_trees_all_close(prob_em, prob_log, atol=1e-7)
 
 

@@ -103,9 +103,9 @@ overgeneral-exceptions = ["builtins.BaseException", "builtins.Exception"]
 
 [tool.pylint.format]
 expected-line-ending-format = "LF"
-ignore-long-lines = "^\\s*(# )?<?https?://\\S+>?$"
+ignore-long-lines = "^\\s*(# )?<?https?://\\S+>?$|# type: ignore|# pylint: disable"
 indent-after-paren = 4
-indent-string = "  "
+indent-string = "    "
 max-line-length = 90
 max-module-lines = 1000
 single-line-if-stmt = true
