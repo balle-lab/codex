@@ -10,11 +10,7 @@
 # KIND, either express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 # ========================================================================================
-"""Implementation of Wasserstein Distortion.
-
-Please refer to https://arxiv.org/abs/2310.03629 and https://arxiv.org/abs/2412.00505 for
-details.
-"""
+"""Implementation of Wasserstein Distortion."""
 
 import collections
 from collections.abc import Collection
@@ -152,6 +148,19 @@ def wasserstein_distortion(
         Scalar distortion value.
     dict
         Dictionary containing intermediate computations (if `return_intermediates`).
+
+    Notes
+    -----
+    For an introduction to Wasserstein Distortion, refer to [1]_. For a description of
+    this implementation, refer to [2]_.
+
+    .. [1] Y. Qiu, A. B. Wagner, J. Ballé, L. Theis: "Wasserstein Distortion: Unifying
+       Fidelity and Realism," 2024 58th Ann. Conf. on Information Sciences and Systems
+       (CISS), 2024. https://arxiv.org/abs/2310.03629
+    .. [2] J. Ballé, L. Versari, E. Dupont, H. Kim, M. Bauer: "Good, Cheap,
+       and Fast: Overfitted Image Compression with Wasserstein Distortion," 2025 IEEE/CVF
+       Conf. on Computer Vision and Pattern Recognition (CVPR), 2025.
+       https://arxiv.org/abs/2412.00505
     """
     if features_a.shape != features_b.shape:
         raise ValueError(
@@ -269,6 +278,19 @@ def multi_wasserstein_distortion(
         Scalar distortion value.
     dict
         Dictionary containing intermediate computations (if `return_intermediates`).
+
+    Notes
+    -----
+    For an introduction to Wasserstein Distortion, refer to [1]_. For a description of
+    this implementation, refer to [2]_.
+
+    .. [1] Y. Qiu, A. B. Wagner, J. Ballé, L. Theis: "Wasserstein Distortion: Unifying
+       Fidelity and Realism," 2024 58th Ann. Conf. on Information Sciences and Systems
+       (CISS), 2024. https://arxiv.org/abs/2310.03629
+    .. [2] J. Ballé, L. Versari, E. Dupont, H. Kim, M. Bauer: "Good, Cheap,
+       and Fast: Overfitted Image Compression with Wasserstein Distortion," 2025 IEEE/CVF
+       Conf. on Computer Vision and Pattern Recognition (CVPR), 2025.
+       https://arxiv.org/abs/2412.00505
     """
     if len(features_a) != len(features_b):
         raise ValueError(
@@ -348,6 +370,15 @@ def vgg16_wasserstein_distortion(
     -------
     Array
         Scalar distortion value.
+
+    Notes
+    -----
+    This is the distortion loss function used in [1]_.
+
+    .. [1] J. Ballé, L. Versari, E. Dupont, H. Kim, M. Bauer: "Good, Cheap,
+       and Fast: Overfitted Image Compression with Wasserstein Distortion," 2025 IEEE/CVF
+       Conf. on Computer Vision and Pattern Recognition (CVPR), 2025.
+       https://arxiv.org/abs/2412.00505
     """
     features_a = pretrained_features.compute_vgg16_features(
         image_a, num_scales=num_scales
