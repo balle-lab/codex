@@ -19,31 +19,35 @@ from jax import numpy as jnp
 Array = jax.Array
 ArrayLike = jax.typing.ArrayLike
 
-# TODO(jonaballe): Convert docstrings to numpy format.
-
 
 def soft_round(x: ArrayLike, temperature: ArrayLike | None) -> Array:
     """Differentiable approximation to `jnp.round`.
 
-    Lower temperatures correspond to closer approximations of the round function.
-    For temperatures approaching infinity, this function resembles the identity.
+    Lower temperatures correspond to closer approximations of the round function. For
+    temperatures approaching infinity, this function resembles the identity.
 
-    This function is described in Sec. 4.1 of the paper
-    > "Universally Quantized Neural Compression"<br />
-    > Eirikur Agustsson & Lucas Theis<br />
-    > https://arxiv.org/abs/2006.09952
+    Parameters
+    ----------
+    x
+        Input to the function.
+    temperature
+        Non-negative number. Controls smoothness of the approximation. For convenience, we
+        support ``temperature = None``, which is the same as ``temperature = inf``, for
+        which `soft_round` is the same as identity.
 
-    The temperature argument is the reciprocal of `alpha` in the paper.
+    Returns
+    -------
+    Array
+        Soft-rounded input having the same shape as `x`.
 
-    For convenience, we support `temperature = None`, which is the same as
-    `temperature = inf`, which is the same as identity.
+    Notes
+    -----
+    This function is further described in Sec. 4.1. of [1]_. The temperature argument is
+    the reciprocal of `alpha` in the paper.
 
-    Args:
-      x: Array. Inputs to the function.
-      temperature: Float >= 0. Controls smoothness of the approximation.
-
-    Returns:
-      Array of same shape as `x`.
+    .. [1] E. Agustsson, L. Theis: "Universally Quantized Neural Compression," Adv. in
+       Neural Information Processing Systems, vol. 33, 2020.
+       https://arxiv.org/abs/2006.09952
     """
     if temperature is None:
         temperature = jnp.inf
@@ -68,22 +72,31 @@ def soft_round(x: ArrayLike, temperature: ArrayLike | None) -> Array:
 def soft_round_inverse(x: ArrayLike, temperature: ArrayLike | None) -> Array:
     """Inverse of `soft_round`.
 
-    This function is described in Sec. 4.1 of the paper
-    > "Universally Quantized Neural Compression"<br />
-    > Eirikur Agustsson & Lucas Theis<br />
-    > https://arxiv.org/abs/2006.09952
+    Lower temperatures correspond to closer approximations of the round function. For
+    temperatures approaching infinity, this function resembles the identity.
 
-    The temperature argument is the reciprocal of `alpha` in the paper.
+    Parameters
+    ----------
+    x
+        Input to the function.
+    temperature
+        Non-negative number. Controls smoothness of the approximation. For convenience, we
+        support ``temperature = None``, which is the same as ``temperature = inf``, for
+        which `soft_round` is the same as identity.
 
-    For convenience, we support `temperature = None`, which is the same as
-    `temperature = inf`, which is the same as identity.
+    Returns
+    -------
+    Array
+        Return value of the same shape as `x`.
 
-    Args:
-      x: Array. Inputs to the function.
-      temperature: Float >= 0. Controls smoothness of the approximation.
+    Notes
+    -----
+    This function is further described in Sec. 4.1. of [1]_. The temperature argument is
+    the reciprocal of `alpha` in the paper.
 
-    Returns:
-      Array of same shape as `x`.
+    .. [1] E. Agustsson, L. Theis: "Universally Quantized Neural Compression," Adv. in
+       Neural Information Processing Systems, vol. 33, 2020.
+       https://arxiv.org/abs/2006.09952
     """
     if temperature is None:
         temperature = jnp.inf
@@ -108,33 +121,43 @@ def soft_round_inverse(x: ArrayLike, temperature: ArrayLike | None) -> Array:
 def soft_round_conditional_mean(x: ArrayLike, temperature: ArrayLike | None) -> Array:
     """Conditional mean of inputs given noisy soft rounded values.
 
-    Computes `g(z) = E[X | Q(X) + U = z]` where `Q` is the soft-rounding function,
-    `U` is uniform between -0.5 and 0.5 and `X` is considered uniform when
-    truncated to the interval `[z - 0.5, z + 0.5]`.
+    Computes ``g(z) = E[X | Q(X) + U = z]`` where ``Q`` is the soft-rounding function,
+    ``U`` is uniform between -0.5 and 0.5 and ``X`` is considered uniform when truncated
+    to the interval ``[z - 0.5, z + 0.5]``.
 
-    This is described in Sec. 4.1. in the paper
-    > "Universally Quantized Neural Compression"<br />
-    > Eirikur Agustsson & Lucas Theis<br />
-    > https://arxiv.org/abs/2006.09952
+    Parameters
+    ----------
+    x
+        Input to the function.
+    temperature
+        Non-negative number. Controls smoothness of the approximation. For convenience, we
+        support ``temperature = None``, which is the same as ``temperature = inf``, for
+        which `soft_round` is the same as identity.
 
-    Args:
-      x: The input tensor.
-      temperature: Float >= 0. Controls smoothness of the approximation.
+    Returns
+    -------
+    Array
+        Return value of the same shape as `x`.
 
-    Returns:
-      Array of same shape as `x`.
+    Notes
+    -----
+    This function is further described in Sec. 4.1. of [1]_. The temperature argument is
+    the reciprocal of `alpha` in the paper.
+
+    .. [1] E. Agustsson, L. Theis: "Universally Quantized Neural Compression," Adv. in
+       Neural Information Processing Systems, vol. 33, 2020.
+       https://arxiv.org/abs/2006.09952
     """
     return soft_round_inverse(x - 0.5, temperature) + 0.5
 
 
 @functools.partial(jax.custom_jvp, nondiff_argnums=(2,))
 def ste_argmax(logits: Array, temperature: Array, axis=-1) -> Array:
-    """`argmax` with straight-through gradient estimation.
+    """`jnp.argmax` with straight-through gradient estimation.
 
-    The gradient of this function is overridden to be the gradient of:
-    ```
-    jax.nn.softmax(logits / temperature, axis)
-    ```
+    The gradient of this function is overridden to be the gradient of::
+
+        jax.nn.softmax(logits / temperature, axis)
 
     Args:
       logits: Inputs to the function.
@@ -142,7 +165,7 @@ def ste_argmax(logits: Array, temperature: Array, axis=-1) -> Array:
       axis: The dimension index of `logits` to take the argmax over.
 
     Returns:
-      One-hot representation of the `argmax` of `logits`.
+      One-hot representation of the ``argmax`` of `logits`.
     """
     del temperature  # unused in forward pass
     index = jnp.argmax(logits, axis=axis)
@@ -151,7 +174,7 @@ def ste_argmax(logits: Array, temperature: Array, axis=-1) -> Array:
 
 @ste_argmax.defjvp
 def ste_argmax_jvp(axis, primals, tangents):
-    """Straight-through gradient estimator for `argmax`."""
+    """Straight-through gradient estimator for `ste_argmax`."""
     logits, temperature = primals
     logits_dot, _ = tangents
     _, argmax_dot = jax.jvp(
@@ -168,7 +191,7 @@ def ste_round(x: ArrayLike) -> Array:
 
 @ste_round.defjvp
 def ste_round_jvp(primals, tangents):
-    """Straight-through gradient estimator for `round`."""
+    """Straight-through gradient estimator for `ste_round`."""
     (x,) = primals
     (x_dot,) = tangents
     return ste_round(x), x_dot

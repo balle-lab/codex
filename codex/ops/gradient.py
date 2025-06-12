@@ -12,44 +12,55 @@
 # ========================================================================================
 """Special gradient operations."""
 
+from collections.abc import Callable
 import jax
 import jax.numpy as jnp
 
-# TODO(jonaballe): Convert docstrings to numpy format.
+Array = jax.Array
 
 
 @jax.custom_vjp
-def upper_limit(inputs, limit):
+def upper_limit(inputs: Array, limit: Array) -> Array:
     """Limits an array from above, with faked gradients.
 
     In contrast to `jnp.minimum`, this function never returns a gradient for `limit`, and
     for values in `inputs` which exceed the limit, it returns a gradient if and only if
     that gradient is positive.
 
-    Args:
-      inputs: The input array.
-      limit: Array. Upper limit for `inputs`.
+    Parameters
+    ----------
+    inputs
+        The input array.
+    limit
+        Upper limit for `inputs`.
 
-    Returns:
-      `jnp.minimum(inputs, limit)`.
+    Returns
+    -------
+    Array
+      ``jnp.minimum(inputs, limit)``.
     """
     return jnp.minimum(inputs, limit)
 
 
 @jax.custom_vjp
-def lower_limit(inputs, limit):
+def lower_limit(inputs: Array, limit: Array) -> Array:
     """Limits an array from below, with faked gradients.
 
     In contrast to `jnp.maximum`, this function never returns a gradient for `limit`, and
     for values in `inputs` which exceed the limit, it returns a gradient if and only if
     that gradient is negative.
 
-    Args:
-      inputs: The input array.
-      limit: Array. Lower limit for `inputs`.
+    Parameters
+    ----------
+    inputs
+        The input array.
+    limit
+        Lower limit for `inputs`.
 
-    Returns:
-      `jnp.maximum(inputs, limit)`.
+    Returns
+    -------
+    Array
+        ``jnp.maximum(inputs, limit)``.
     """
     return jnp.maximum(inputs, limit)
 
@@ -80,29 +91,38 @@ upper_limit.defvjp(upper_limit_fwd, upper_limit_bwd)
 lower_limit.defvjp(lower_limit_fwd, lower_limit_bwd)
 
 
-def perturb_and_apply(f, x, u, *args):
+def perturb_and_apply(f: Callable, x: Array, u: Array, *args) -> Array:
     """Perturbs the inputs of a pointwise function using JAX.
 
-    This function adds uniform noise in the range -0.5 to 0.5 to the first
-    argument of the given function.
-    It further replaces derivatives of the function with (analytically computed)
-    expected derivatives w.r.t. the noise.
+    This function adds uniform noise in the range -0.5 to 0.5 to the first argument of the
+    given function. It further replaces derivatives of the function with (analytically
+    computed) expected derivatives w.r.t. the noise.
 
-    This is further described in Sec. 4.2. in the paper:
-    > "Universally Quantized Neural Compression"<br />
-    > Eirikur Agustsson & Lucas Theis<br />
-    > https://arxiv.org/abs/2006.09952
+    Parameters
+    ----------
+    f
+        JAX transformable pointwise function.
+    x
+        The inputs.
+    u
+        The noise realization to perturb `x` with. Must be a sample from a uniform
+        distribution.
+    *args
+        Optional, additional arguments of `f`.
 
-    Args:
-      f: Callable. JAX transformable pointwise function.
-      x: Array. The inputs.
-      u: Array. The noise realization to perturb `x` with. Must be a sample from a
-        uniform distribution.
-      *args: Optional, additional arguments of `f`.
+    Returns
+    -------
+    Array
+        ``y=f(x+u, *args)``. The gradient of `y` w.r.t. `x` takes the expectation over
+        the derivatives w.r.t. the distribution of `u` in closed form.
 
-    Returns:
-      `y=f(x+u, *args)`. The gradient of `y` w.r.t. `x` takes the expectation over
-      the derivatives w.r.t. the distribution of `u` in closed form.
+    Notes
+    -----
+    This function is further described in Sec. 4.2. of [1]_.
+
+    .. [1] E. Agustsson, L. Theis: "Universally Quantized Neural Compression," Adv. in
+       Neural Information Processing Systems, vol. 33, 2020.
+       https://arxiv.org/abs/2006.09952
     """
     # This is the correct output of the function, and allows automatically computing the
     # gradient wrt. all arguments and closures of f, except x.

@@ -22,13 +22,11 @@ ArrayLike = jax.typing.ArrayLike
 def verysoftplus(x: ArrayLike) -> Array:
     """An activation function symmetric wrt. division and multiplication.
 
-    Defined as `1+x` for `x > 0` and `1/(1-x)` for `x < 0`.
+    Defined as ``1+x`` for ``x > 0`` and ``1/(1-x)`` for ``x < 0``.
 
-    This implies:
+    This implies::
 
-    ```
-    1/verysoftplus(x) = verysoftplus(-x)
-    ```
+        1/verysoftplus(x) == verysoftplus(-x)
 
     Parameters
     ----------

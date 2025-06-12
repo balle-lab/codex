@@ -41,20 +41,20 @@ def safe_sqrt_jvp(limit, primals, tangents):
 
 
 def lowpass(inputs: Array, stride: int) -> Array:
-    """Lowpass filters an array of shape (batch, height, width).
+    """Lowpass filters an array of shape ``(batch, height, width)``.
 
     Parameters
     ----------
     inputs
-        The input array of shape (batch, height, width).
+        The input array of shape ``(batch, height, width)``.
     stride
         The stride length of the convolution. Typically either 1 or 2.
 
     Returns
     -------
     Array
-        The lowpass filtered array of shape (batch, height, width). Height and width are
-        the same as the input array if stride is 1.
+        The lowpass filtered array of shape ``(batch, height, width)``. Height and width
+        are the same as the input array if stride is 1.
     """
     # Lowpass filter. Weights sum to one so that the output dynamic range is the same as
     # the input's. Its frequency response will cause some alias when downsampling, but we
@@ -125,11 +125,13 @@ def wasserstein_distortion(
     Parameters
     ----------
     features_a
-        Array shaped `(channels, height, width)`. The first feature array to be compared.
+        Array shaped ``(channels, height, width)``. The first feature array to be
+        compared.
     features_b
-        Array shaped `(channels, height, width)`. The second feature array to be compared.
+        Array shaped ``(channels, height, width)``. The second feature array to be
+        compared.
     log2_sigma
-        Array shaped `(height, width)`. The base two logarithm of the sigma map, which
+        Array shaped ``(height, width)``. The base two logarithm of the sigma map, which
         indicates the amount of summarization in each location. Must have the same height
         and width as the feature arrays.
     num_levels
@@ -139,7 +141,7 @@ def wasserstein_distortion(
         Upper limit for the gradient of the square root applied to the empirical feature
         variance estimates, for numerical stability.
     return_intermediates
-        If `True`, returns intermediate computations in a dictionary, besides the
+        If ``True``, returns intermediate computations in a dictionary, besides the
         distortion value.
 
     Returns
@@ -253,13 +255,13 @@ def multi_wasserstein_distortion(
     Parameters
     ----------
     features_a
-        Multiple feature arrays of format `(channels, height, width)`, corresponding to
+        Multiple feature arrays of format ``(channels, height, width)``, corresponding to
         the first image to be compared.
     features_b
-        Multiple feature arrays of format `(channels, height, width)`, corresponding to
+        Multiple feature arrays of format ``(channels, height, width)``, corresponding to
         the second image to be compared.
     log2_sigma
-        Array shaped `(height, width)`. The base two logarithm of the sigma map, which
+        Array shaped ``(height, width)``. The base two logarithm of the sigma map, which
         indicates the amount of summarization in each location. Doesn't have to have the
         same shape as the feature arrays.
     num_levels
@@ -269,7 +271,7 @@ def multi_wasserstein_distortion(
         Upper limit for the gradient of the square root applied to the empirical feature
         variance estimates, for numerical stability.
     return_intermediates
-        If `True`, returns intermediate computations in a dictionary, besides the
+        If ``True``, returns intermediate computations in a dictionary, besides the
         distortion value.
 
     Returns
@@ -347,16 +349,16 @@ def vgg16_wasserstein_distortion(
     Parameters
     ----------
     image_a
-        First image to be compared in format `(3, height, width)`.
+        First image to be compared in format ``(3, height, width)``.
     image_b
-        Second image to be compared in format `(3, height, width)`.
+        Second image to be compared in format ``(3, height, width)``.
     log2_sigma
-        Array, shape `(height, width)`. The base two logarithm of the sigma map, which
+        Array, shape ``(height, width)``. The base two logarithm of the sigma map, which
         indicates the amount of summarization in each location. Doesn't have to have the
         same shape as the image arrays.
     num_scales
         The number of scales of the image the features should be computed on. The image
-        will be downsampled `num_scales - 1` times and VGG features computed on the
+        will be downsampled ``num_scales - 1`` times and VGG features computed on the
         original image plus the downsampled versions. The concatenated list of all
         features will be returned.
     num_levels

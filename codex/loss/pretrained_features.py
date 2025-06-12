@@ -56,17 +56,17 @@ def compute_vgg16_features(image: Array, num_scales: int = 3) -> list[Array]:
     Parameters
     ----------
     image
-        Image in format `(3, height, width)`.
+        Image in format ``(3, height, width)``.
     num_scales
         The number of scales of the image the features should be computed on. The image
-        will be downsampled `num_scales - 1` times and VGG features computed on the
+        will be downsampled ``num_scales - 1`` times and VGG features computed on the
         original image plus the downsampled versions. The concatenated list of all
         features will be returned.
 
     Returns
     -------
     list
-        A list of feature arrays of format `(channel, height, width)`.
+        A list of feature arrays of format ``(channel, height, width)``.
     """
     try:
         vgg, params = _MODELS["vgg16"]
