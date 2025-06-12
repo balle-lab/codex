@@ -121,20 +121,20 @@ def wasserstein_distortion(
   """Evaluates Wasserstein Distortion between two feature arrays.
 
   Args:
-    features_a: Array, shape `(channels, height, width)`. The first feature
+    features_a: Array shaped `(channels, height, width)`. The first feature
       array to be compared.
-    features_b: Array, shape `(channels, height, width)`. The second feature
+    features_b: Array shaped `(channels, height, width)`. The second feature
       array to be compared.
-    log2_sigma: Array, shape `(height, width)`. The base two logarithm of the
+    log2_sigma: Array shaped `(height, width)`. The base two logarithm of the
       sigma map, which indicates the amount of summarization in each location.
       Must have the same height and width as the feature arrays.
-    num_levels: Integer. The number of multi-scale levels of the feature
+    num_levels: The number of multi-scale levels of the feature
       statistics to compute. Must be greater or equal to the maximum of
       `log2_sigma`.
-    sqrt_grad_limit: Float. Upper limit for the gradient of the square root
+    sqrt_grad_limit: Upper limit for the gradient of the square root
       applied to the empirical feature variance estimates, for numerical
       stability.
-    return_intermediates: Boolean. If `True`, returns intermediate computations
+    return_intermediates: If `True`, returns intermediate computations
       in a dictionary, besides the distortion value.
 
   Returns:
@@ -230,16 +230,16 @@ def multi_wasserstein_distortion(
       corresponding to the first image to be compared.
     features_b: Multiple feature arrays of format `(channels, height, width)`,
       corresponding to the second image to be compared.
-    log2_sigma: Array, shape `(height, width)`. The base two logarithm of the
+    log2_sigma: Array shaped `(height, width)`. The base two logarithm of the
       sigma map, which indicates the amount of summarization in each location.
       Doesn't have to have the same shape as the feature arrays.
-    num_levels: Integer. The number of multi-scale levels of the feature
+    num_levels: The number of multi-scale levels of the feature
       statistics to compute. Must be greater or equal to the maximum of
       `log2_sigma`.
-    sqrt_grad_limit: Float. Upper limit for the gradient of the square root
+    sqrt_grad_limit: Upper limit for the gradient of the square root
       applied to the empirical feature variance estimates, for numerical
       stability.
-    return_intermediates: Boolean. If `True`, returns intermediate computations
+    return_intermediates: If `True`, returns intermediate computations
       in a dictionary, besides the distortion value.
 
   Returns:
@@ -286,6 +286,7 @@ def vgg16_wasserstein_distortion(
     image_b: Array,
     log2_sigma: Array,
     *,
+    num_scales: int = 3,
     num_levels: int = 5,
     sqrt_grad_limit: float = 1e6,
 ) -> Array:
@@ -297,18 +298,22 @@ def vgg16_wasserstein_distortion(
     log2_sigma: Array, shape `(height, width)`. The base two logarithm of the
       sigma map, which indicates the amount of summarization in each location.
       Doesn't have to have the same shape as the image arrays.
-    num_levels: Integer. The number of multi-scale levels of the feature
+    num_scales: The number of scales of the image the features should be computed on. The
+      image will be downsampled `num_scales - 1` times and VGG features computed on the
+      original image plus the downsampled versions. The concatenated list of all features
+      will be returned.
+    num_levels: The number of multi-scale levels of the feature
       statistics to compute. Must be greater or equal to the maximum of
       `log2_sigma`.
-    sqrt_grad_limit: Float. Upper limit for the gradient of the square root
+    sqrt_grad_limit: Upper limit for the gradient of the square root
       applied to the empirical feature variance estimates, for numerical
       stability.
 
   Returns:
     Distortion value.
   """
-  features_a = pretrained_features.compute_vgg16_features(image_a)
-  features_b = pretrained_features.compute_vgg16_features(image_b)
+  features_a = pretrained_features.compute_vgg16_features(image_a, num_scales=num_scales)
+  features_b = pretrained_features.compute_vgg16_features(image_b, num_scales=num_scales)
 
   return multi_wasserstein_distortion(
       features_a,
