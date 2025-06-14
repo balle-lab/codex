@@ -27,7 +27,16 @@ or answer more easily later.
 To install CoDeX via `pip`, run the following command:
 
 ```bash
-python -m pip install --upgrade git+https://github.com/balle-lab/codex.git
+python -m pip install git+https://github.com/balle-lab/codex.git
+```
+
+[!IMPORTANT]
+The Wasserstein Distortion implementation currently requires a patch to `flaxmodels`
+which, as of June 2025, has not been published on PyPI yet. If you need this
+functionality, please install `flaxmodels` directly from GitHub to avoid problems:
+
+```bash
+python -m pip install git+https://github.com/matthias-wright/flaxmodels.git
 ```
 
 To test that the installation works correctly, you can run the unit tests with:
