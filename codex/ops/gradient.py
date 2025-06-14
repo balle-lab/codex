@@ -120,7 +120,7 @@ def perturb_and_apply(f: Callable, x: ArrayLike, u: ArrayLike, *args) -> Array:
     Notes
     -----
     This function is further described in Sec. 4.2. of [1]_. Please cite the paper if you
-    use this code for scientific work.
+    use this code for scientific or research work.
 
     .. [1] E. Agustsson, L. Theis: "Universally Quantized Neural Compression," Adv. in
        Neural Information Processing Systems, vol. 33, 2020.

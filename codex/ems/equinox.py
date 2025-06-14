@@ -78,7 +78,7 @@ class DeepFactorizedEntropyModel(
     -----
     This model is further described in appendix 6.1 of [1]_. Convolution with a unit-width
     uniform distribution is described in appendix 6.2, ibid. Please cite the paper if you
-    use this code for scientific work.
+    use this code for scientific or research work.
 
     .. [1] J. Ballé, D. Minnen, S. Singh, S. J. Hwang, N. Johnston: "Variational image
        compression with a scale hyperprior," 6th Int. Conf. on Learning Representations

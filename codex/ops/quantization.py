@@ -44,7 +44,7 @@ def soft_round(x: ArrayLike, temperature: ArrayLike | None) -> Array:
     -----
     This function is further described in Sec. 4.1. of [1]_. The temperature argument is
     the reciprocal of `alpha` in the paper. Please cite the paper if you use this code for
-    scientific work.
+    scientific or research work.
 
     .. [1] E. Agustsson, L. Theis: "Universally Quantized Neural Compression," Adv. in
        Neural Information Processing Systems, vol. 33, 2020.
@@ -94,7 +94,7 @@ def soft_round_inverse(x: ArrayLike, temperature: ArrayLike | None) -> Array:
     -----
     This function is further described in Sec. 4.1. of [1]_. The temperature argument is
     the reciprocal of `alpha` in the paper. Please cite the paper if you use this code for
-    scientific work.
+    scientific or research work.
 
     .. [1] E. Agustsson, L. Theis: "Universally Quantized Neural Compression," Adv. in
        Neural Information Processing Systems, vol. 33, 2020.
@@ -145,7 +145,7 @@ def soft_round_conditional_mean(x: ArrayLike, temperature: ArrayLike | None) -> 
     -----
     This function is further described in Sec. 4.1. of [1]_. The temperature argument is
     the reciprocal of `alpha` in the paper. Please cite the paper if you use this code for
-    scientific work.
+    scientific or research work.
 
     .. [1] E. Agustsson, L. Theis: "Universally Quantized Neural Compression," Adv. in
        Neural Information Processing Systems, vol. 33, 2020.

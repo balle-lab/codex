@@ -57,17 +57,7 @@ We recommend importing the library from your Python code as follows:
 import codex as cdx
 ```
 
-## Citation
+## Citations
 
-If you use this library for research purposes, please cite:
-```
-@software{codex_github,
-  author = "Ballé, Jona and Hwang, Sung Jin and Agustsson, Eirikur",
-  title = "{CoDeX}: Learned Data Compression in {JAX}",
-  url = "http://github.com/balle-lab/codex",
-  version = "0.0.1",
-  year = "2022",
-}
-```
-In the above BibTeX entry, names are top contributors sorted by number of commits. Please
-adjust version number and year according to the version that was actually used.
+If you use this library for scientific or research purposes, please refer to the
+docstrings in the individual functions and classes to see which papers to cite.
