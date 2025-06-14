@@ -17,10 +17,10 @@ paper](https://arxiv.org/abs/2202.06533).
 ## Documentation & getting help
 
 Please post all questions or comments on
-[Discussions](https://github.com/google/codex/discussions). Only file
-[Issues](https://github.com/google/codex/issues) for actual bugs or feature requests. On
-Discussions, you may get a faster answer, and you help other people find the question or
-answer more easily later.
+[Discussions](https://github.com/balle-lab/google/codex/discussions). Only file
+[Issues](https://github.com/balle-lab/codex/issues) for actual bugs or feature requests.
+On Discussions, you may get a faster answer, and you help other people find the question
+or answer more easily later.
 
 ## Installation
 
