@@ -51,10 +51,25 @@ in the last line.
 
 ## Usage
 
-We recommend importing the library from your Python code as follows:
+We recommend importing the library from your Python code and using it as follows:
 
 ```python
 import codex as cdx
+
+... = cdx.ops.ste_round(...)
+... = cdx.loss.wasserstein_distortion(...)
+```
+
+Entropy models can be imported with support for
+[Equinox](https://github.com/patrick-kidger/equinox) or for
+[Flax](https://github.com/google/flax):
+
+```python
+from codex.ems import equinox as ems
+# or:
+from codex.ems import flax as ems
+
+... = ems.RealMappedFourierEntropyModel(...)
 ```
 
 ## Citations
