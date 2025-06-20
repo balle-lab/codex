@@ -1,7 +1,7 @@
 [project]
 name = "jax-codex"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = {file = "LICENSE"}
 authors = [{name = "CoDeX authors"}]
 maintainers = [{name = "Jona Ballé", email = "jona.balle@nyu.edu"}]
