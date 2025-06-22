@@ -14,7 +14,6 @@
 
 import jax
 import jax.numpy as jnp
-import numpy as np
 import pytest
 from codex.loss import pretrained_features
 from codex.loss import wasserstein
@@ -29,7 +28,7 @@ def test_lowpass_behavior():
     - The value range stays between 0 and 1, the same as the input.
     """
     # Create random noise [0, 1]
-    noise = jnp.array(np.random.rand(1, 64, 64), dtype=jnp.float32)
+    noise = jax.random.uniform(jax.random.key(0), (1, 64, 64))
     # Apply lowpass with stride=2
     filtered = wasserstein.lowpass(noise, stride=2)
 
