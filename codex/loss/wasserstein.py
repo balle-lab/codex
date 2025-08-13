@@ -352,9 +352,13 @@ def vgg16_wasserstein_distortion(
     Parameters
     ----------
     image_a
-        First image to be compared in format ``(3, height, width)``.
+        First image to be compared in format ``(3, height, width)``. The pixel format is
+        assumed to be the same as for VGG: sRGB colorspace, with pixel values linearly
+        scaled to floats in the range [0, 1].
     image_b
-        Second image to be compared in format ``(3, height, width)``.
+        Second image to be compared in format ``(3, height, width)``. The pixel format is
+        assumed to be the same as for VGG: sRGB colorspace, with pixel values linearly
+        scaled to floats in the range [0, 1].
     log2_sigma
         Array, shape ``(height, width)``. The base two logarithm of the sigma map, which
         indicates the amount of summarization in each location. Doesn't have to have the

@@ -57,7 +57,8 @@ def compute_vgg16_features(image: ArrayLike, num_scales: int = 3) -> list[Array]
     Parameters
     ----------
     image
-        Image in format ``(3, height, width)``.
+        Image in format ``(3, height, width)``. The pixel format is assumed to be: sRGB
+        colorspace, with pixel values linearly scaled to floats in the range [0, 1].
     num_scales
         The number of scales of the image the features should be computed on. The image
         will be downsampled ``num_scales - 1`` times and VGG features computed on the
