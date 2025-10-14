@@ -18,6 +18,7 @@ import functools
 from typing import overload, Any, Literal
 import jax
 from jax import numpy as jnp
+from jax.scipy import stats
 from codex.loss import pretrained_features
 from codex.ops import gradient
 
@@ -405,3 +406,105 @@ def vgg16_wasserstein_distortion(
         sqrt_grad_limit=sqrt_grad_limit,
         return_intermediates=False,
     )
+
+
+def discrete_wasserstein_distortion(
+    features_a: Collection[Array],
+    features_b: Collection[Array],
+    centers_w: Array,
+    centers_h: Array,
+    sigmas: Collection[Array],
+) -> Array:
+    """Wasserstein Distortion for discrete number of receptive fields.
+
+    This function accepts more than one feature array per image. The arrays don't need to
+    be all the same shape, but the nth array in `features_a` must have the same shape as
+    the nth array in `features_b`.
+
+    Parameters
+    ----------
+    features_a
+        Multiple feature arrays of format ``(channels, height, width)``, corresponding to
+        the first image to be compared.
+    features_b
+        Multiple feature arrays of format ``(channels, height, width)``, corresponding to
+        the second image to be compared.
+    centers_w
+        Horizontal coordinates for all feature arrays, in relative coordinates: the left
+        is 0, the right is 1. The argument is interpreted as a vector, specifying one or
+        more locations of receptive fields within each feature array.
+    centers_h
+        Vertical coordinates for all feature arrays, in relative coordinates: the top is
+        0, the bottom is 1. The argument is interpreted as a vector, specifying one or
+        more locations of receptive fields within each feature array.
+    sigmas
+        List of receptive field sizes for each feature array. The number of list elements
+        must correspond to the number of feature arrays. Each element of the list is
+        interpreted as a vector, specifying one or more sizes of receptive fields within
+        the corresponding feature array.
+
+    Returns
+    -------
+    Array
+        Scalar distortion value.
+
+    Notes
+    -----
+    For an introduction to Wasserstein Distortion, refer to [1]_. Please cite this paper
+    if you use this code for scientific or research work.
+
+    .. [1] Y. Qiu, A. B. Wagner, J. Ballé, L. Theis: "Wasserstein Distortion: Unifying
+       Fidelity and Realism," 2024 58th Ann. Conf. on Information Sciences and Systems
+       (CISS), 2024. https://arxiv.org/abs/2310.03629
+    """
+    if not len(features_a) == len(features_b) == len(sigmas):
+        raise ValueError("The list of feature maps and sigmas must have same length.")
+
+    dist = jnp.zeros(())
+    for fa, fb, ss in zip(features_a, features_b, sigmas):
+        if fa.shape != fb.shape:
+            raise ValueError(
+                f"Found feature arrays with incompatible shapes. "
+                f"A: {fa.shape}, B: {fb.shape}."
+            )
+        if not centers_w.ndim == centers_h.ndim == ss.ndim == 1:
+            raise ValueError(
+                f"Centers or and sigma arrays must be vectors. "
+                f"centers_w: {centers_w.shape}, centers_h: {centers_h.shape}, "
+                f"sigmas: {ss.shape})"
+            )
+        if not centers_w.shape == centers_h.shape == ss.shape:
+            raise ValueError(
+                f"Found centers or sigma vectors with different lengths. "
+                f"centers_w: {centers_w.size}, centers_h: {centers_h.size}, "
+                f"sigmas: {ss.size})"
+            )
+
+        sigma_factor = jnp.sqrt(fa.shape[-2] * fa.shape[-1])
+        window_w = stats.norm.pdf(
+            jnp.linspace(0.0, fa.shape[-1], fa.shape[-1])[None, None, None, :],
+            centers_w[:, None, None, None] * fa.shape[-1],
+            ss[:, None, None, None] * sigma_factor,
+        )
+        window_h = stats.norm.pdf(
+            jnp.linspace(0.0, fa.shape[-2], fa.shape[-2])[None, None, :, None],
+            centers_h[:, None, None, None] * fa.shape[-2],
+            ss[:, None, None, None] * sigma_factor,
+        )
+        window_w /= jnp.sum(window_w, axis=-1, keepdims=True)
+        window_h /= jnp.sum(window_h, axis=-2, keepdims=True)
+
+        mean_a = jnp.sum(fa * window_w * window_h, axis=(-2, -1))
+        mean_b = jnp.sum(fb * window_w * window_h, axis=(-2, -1))
+
+        squared_fa = jnp.square(fa - mean_a[:, :, None, None])
+        squared_fb = jnp.square(fb - mean_b[:, :, None, None])
+
+        std_a = jnp.sqrt(jnp.sum(squared_fa * window_w * window_h, axis=(-2, -1)))
+        std_b = jnp.sqrt(jnp.sum(squared_fb * window_w * window_h, axis=(-2, -1)))
+
+        d = jnp.sqrt(jnp.square(mean_a - mean_b) + jnp.square(std_a - std_b))
+        d = d.sum(axis=1).mean(axis=0)
+        dist += d
+
+    return dist
