@@ -441,7 +441,8 @@ def discrete_wasserstein_distortion(
         List of receptive field sizes for each feature array. The number of list elements
         must correspond to the number of feature arrays. Each element of the list is
         interpreted as a vector, specifying one or more sizes of receptive fields within
-        the corresponding feature array.
+        the corresponding feature array. The sizes are scaled with the geometric mean of
+        the dimensions of each feature array.
 
     Returns
     -------
@@ -469,7 +470,7 @@ def discrete_wasserstein_distortion(
             )
         if not centers_w.ndim == centers_h.ndim == ss.ndim == 1:
             raise ValueError(
-                f"Centers or and sigma arrays must be vectors. "
+                f"Centers and sigma arrays must be vectors. "
                 f"centers_w: {centers_w.shape}, centers_h: {centers_h.shape}, "
                 f"sigmas: {ss.shape})"
             )
@@ -482,29 +483,29 @@ def discrete_wasserstein_distortion(
 
         sigma_factor = jnp.sqrt(fa.shape[-2] * fa.shape[-1])
         window_w = stats.norm.pdf(
-            jnp.linspace(0.0, fa.shape[-1], fa.shape[-1])[None, None, None, :],
-            centers_w[:, None, None, None] * fa.shape[-1],
-            ss[:, None, None, None] * sigma_factor,
+            jnp.linspace(0.0, fa.shape[-1], fa.shape[-1])[None, :],
+            centers_w[:, None] * fa.shape[-1],
+            ss[:, None] * sigma_factor,
         )
         window_h = stats.norm.pdf(
-            jnp.linspace(0.0, fa.shape[-2], fa.shape[-2])[None, None, :, None],
-            centers_h[:, None, None, None] * fa.shape[-2],
-            ss[:, None, None, None] * sigma_factor,
+            jnp.linspace(0.0, fa.shape[-2], fa.shape[-2])[None, :],
+            centers_h[:, None] * fa.shape[-2],
+            ss[:, None] * sigma_factor,
         )
         window_w /= jnp.sum(window_w, axis=-1, keepdims=True)
-        window_h /= jnp.sum(window_h, axis=-2, keepdims=True)
+        window_h /= jnp.sum(window_h, axis=-1, keepdims=True)
 
-        mean_a = jnp.sum(fa * window_w * window_h, axis=(-2, -1))
-        mean_b = jnp.sum(fb * window_w * window_h, axis=(-2, -1))
+        mean_a = jnp.einsum("chw,rw,rh->rc", fa, window_w, window_h)
+        mean_b = jnp.einsum("chw,rw,rh->rc", fb, window_w, window_h)
 
         squared_fa = jnp.square(fa - mean_a[:, :, None, None])
         squared_fb = jnp.square(fb - mean_b[:, :, None, None])
 
-        std_a = jnp.sqrt(jnp.sum(squared_fa * window_w * window_h, axis=(-2, -1)))
-        std_b = jnp.sqrt(jnp.sum(squared_fb * window_w * window_h, axis=(-2, -1)))
+        std_a = jnp.sqrt(jnp.einsum("rchw,rw,rh->rc", squared_fa, window_w, window_h))
+        std_b = jnp.sqrt(jnp.einsum("rchw,rw,rh->rc", squared_fb, window_w, window_h))
 
         d = jnp.sqrt(jnp.square(mean_a - mean_b) + jnp.square(std_a - std_b))
-        d = d.sum(axis=1).mean(axis=0)
+        d = d.mean(axis=0).sum()
         dist += d
 
     return dist

@@ -123,14 +123,14 @@ def test_multi_wasserstein_distortion_behavior():
     result = wasserstein.multi_wasserstein_distortion(
         features_a, features_b_same, log2_sigma
     )
-    assert result >= 0
+    assert result == 0.
 
     # Different features
     features_b_different = [jnp.ones((1, 32, 32)) * 2.0, jnp.ones((1, 16, 16)) * 2.0]
     result = wasserstein.multi_wasserstein_distortion(
         features_a, features_b_different, log2_sigma
     )
-    assert result > 0
+    assert result > 0.
 
     # Should raise ValueError for list length mismatch
     with pytest.raises(ValueError):
@@ -273,3 +273,67 @@ def test_vgg16_wasserstein_distortion_can_be_called():
     image = jax.random.uniform(jax.random.key(0), (3, 224, 224))
     dist = wasserstein.vgg16_wasserstein_distortion(image, image, jnp.full((224, 224), 3))
     assert jnp.isclose(dist, 0.0)
+
+
+def test_discrete_wasserstein_distortion_behavior():
+    """Tests that discrete Wasserstein Distortion returns expected results."""
+    # Matching feature lists
+    features_a = [jnp.ones((1, 32, 32)), jnp.ones((1, 16, 16))]
+    features_b_same = [jnp.ones((1, 32, 32)), jnp.ones((1, 16, 16))]
+
+    centers_w = jnp.array([0.9, 0.1])
+    centers_h = jnp.array([0.1, 0.9])
+    sigmas = [jnp.array([0.25, 0.5]), jnp.array([0.25, 0.5])]
+
+    # Should return 0 for identical lists
+    result = wasserstein.discrete_wasserstein_distortion(
+        features_a, features_b_same, centers_w, centers_h, sigmas
+    )
+    assert result == 0.
+
+    # Different features
+    features_b_different = [jnp.ones((1, 32, 32)) * 2.0, jnp.ones((1, 16, 16)) * 2.0]
+    result = wasserstein.discrete_wasserstein_distortion(
+        features_a, features_b_different, centers_w, centers_h, sigmas
+    )
+    assert result > 0.
+
+    # Should raise ValueError for list length mismatch
+    with pytest.raises(ValueError):
+        _ = wasserstein.discrete_wasserstein_distortion(
+            features_a, features_b_different[:-1], centers_w, centers_h, sigmas
+        )
+    with pytest.raises(ValueError):
+        _ = wasserstein.discrete_wasserstein_distortion(
+            features_a, features_b_same, centers_w, centers_h, sigmas[:-1]
+        )
+
+    # Should raise ValueError for shape mismatch in one of the pairs
+    with pytest.raises(ValueError):
+        _ = wasserstein.discrete_wasserstein_distortion(
+            features_a,
+            [jnp.ones((1, 32, 32)), jnp.ones((1, 8, 8))],
+            centers_w,
+            centers_h,
+            sigmas,
+        )
+
+    # Should raise ValueError for non-vector arguments
+    with pytest.raises(ValueError):
+        _ = wasserstein.discrete_wasserstein_distortion(
+            features_a,
+            features_b_same,
+            centers_w[None],
+            centers_h,
+            sigmas,
+        )
+
+    # Should raise ValueError for different vector lengths
+    with pytest.raises(ValueError):
+        _ = wasserstein.discrete_wasserstein_distortion(
+            features_a,
+            features_b_same,
+            centers_w,
+            centers_h,
+            2 * [jnp.array([0.25, 0.5, 1.0])],
+        )
