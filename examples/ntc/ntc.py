@@ -31,6 +31,8 @@ import equinox as eqx
 import jax
 from jax import numpy as jnp
 
+from codex.loss import wasserstein
+
 Array = jax.Array
 
 
@@ -223,8 +225,9 @@ class FactorizedPriorModel(eqx.Module):
 
         x_rec = self.synthesis(y)
         x_rec = x_rec[:, : x.shape[-2], : x.shape[-1]]
-
-        distortion = jnp.square(x - x_rec).sum() / num_pixels
+        # distortion = jnp.square(x - x_rec).sum() / num_pixels
+        log2_sigma = jnp.full((x.shape[-2], x.shape[-1]), 4.0) # TODO: log2_sigma should be dynamic
+        distortion = wasserstein.vgg16_wasserstein_distortion(x, x_rec, log2_sigma=log2_sigma)
 
         return x_rec, dict(
             rate=rate,

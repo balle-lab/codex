@@ -23,3 +23,12 @@ poetry.lock
 
 # PyCharm
 .idea
+
+# Wandb
+wandb/
+
+# Checkpoints
+run/
+
+# Evaluation
+evaluation/
